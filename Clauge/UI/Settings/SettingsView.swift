@@ -2,28 +2,15 @@ import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject private var store: ServerStore
-    @StateObject private var vm = SettingsViewModel()
-
     @State private var nameDraft = ""
-    @State private var showPair = false
-    @State private var pairBaselineActive: String?
-    @State private var confirmDisconnect = false
 
     private let remoteGuideURL = URL(string: "https://clauge.in/docs.html#mobile")!
 
-    private var serverName: String { store.activeDevice?.name ?? "Clauge desktop" }
-    private var hostLine: String {
-        guard let d = store.activeDevice, let host = d.hosts.first else { return "Not connected" }
-        return "\(host):\(d.port)"
-    }
-
     var body: some View {
         List {
-            connection
             device
             remoteAccess
             about
-            actions
         }
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
@@ -31,55 +18,10 @@ struct SettingsView: View {
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(Theme.background, for: .navigationBar)
-        .onAppear { nameDraft = store.deviceName; Task { await vm.check() } }
-        .sheet(isPresented: $showPair) {
-            NavigationStack { WelcomeView() }.tint(Theme.pink)
-        }
-        .onChange(of: store.activeDeviceId) { newValue in
-            if showPair && newValue != pairBaselineActive { showPair = false }
-        }
-        .confirmationDialog("Disconnect?", isPresented: $confirmDisconnect, titleVisibility: .visible) {
-            Button("Disconnect", role: .destructive) { store.clear() }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("This removes the pairing with \(serverName). You'll need to pair again to reconnect.")
-        }
+        .onAppear { nameDraft = store.deviceName }
     }
 
     // MARK: Sections
-
-    private var connection: some View {
-        Section("CONNECTION") {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(serverName).foregroundStyle(Theme.textPrimary)
-                Text(hostLine).font(.caption).foregroundStyle(Theme.textSecondary)
-            }
-            Button { Task { await vm.check() } } label: {
-                HStack {
-                    Text("Status")
-                    Spacer()
-                    statusPill
-                }
-            }
-            .foregroundStyle(Theme.textPrimary)
-        }
-        .listRowBackground(Theme.surface)
-    }
-
-    private var statusPill: some View {
-        let (label, color): (String, Color) = {
-            switch vm.status {
-            case .checking: return ("Checking…", Theme.deviceChecking)
-            case .online: return ("Online", Theme.statusRunning)
-            case .offline: return ("Offline", Theme.statusExited)
-            }
-        }()
-        return Text(label)
-            .font(.caption.bold())
-            .foregroundStyle(color)
-            .padding(.horizontal, 10).padding(.vertical, 3)
-            .background(color.opacity(0.15), in: Capsule())
-    }
 
     private var device: some View {
         Section("DEVICE") {
@@ -136,20 +78,6 @@ struct SettingsView: View {
                 Spacer()
                 Text(AppInfo.version).foregroundStyle(Theme.textSecondary)
             }
-        }
-        .listRowBackground(Theme.surface)
-    }
-
-    private var actions: some View {
-        Section {
-            Button("Pair new device") {
-                pairBaselineActive = store.activeDeviceId
-                showPair = true
-            }
-            .foregroundStyle(Theme.pink)
-
-            Button("Disconnect", role: .destructive) { confirmDisconnect = true }
-                .foregroundStyle(Theme.error)
         }
         .listRowBackground(Theme.surface)
     }

@@ -6,6 +6,13 @@ struct WelcomeView: View {
         ZStack {
             Theme.background.ignoresSafeArea()
             VStack(spacing: 24) {
+                Text("On your desktop, open Settings → Mobile and turn the server on.")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 24)
+                    .padding(.top, 12)
+
                 Spacer()
 
                 VStack(spacing: 12) {
@@ -15,11 +22,6 @@ struct WelcomeView: View {
                     Text("Add device")
                         .font(.largeTitle.bold())
                         .foregroundStyle(Theme.textPrimary)
-                    Text("Point your camera at the QR code in Clauge desktop → Settings → Mobile.")
-                        .font(.subheadline)
-                        .foregroundStyle(Theme.textSecondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 32)
                 }
 
                 Spacer()

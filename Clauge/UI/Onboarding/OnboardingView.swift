@@ -10,17 +10,6 @@ struct OnboardingView: View {
         ZStack {
             Theme.background.ignoresSafeArea()
             VStack(spacing: 0) {
-                HStack {
-                    Spacer()
-                    if page < 2 {
-                        Button("Skip") { finish() }
-                            .font(.subheadline)
-                            .foregroundStyle(Theme.textSecondary)
-                    }
-                }
-                .frame(height: 44)
-                .padding(.horizontal, 20)
-
                 TabView(selection: $page) {
                     pageOne.tag(0)
                     pageTwo.tag(1)
