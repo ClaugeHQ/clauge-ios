@@ -1,0 +1,13 @@
+Vendored xterm.js assets (pinned, fetched from jsDelivr)
+
+xterm.js       xterm@5.3.0          lib/xterm.js     (global: Terminal)
+xterm.css      xterm@5.3.0          css/xterm.css
+addon-fit.js   xterm-addon-fit@0.8.0 lib/xterm-addon-fit.js (global: FitAddon.FitAddon)
+addon-webgl.js xterm-addon-webgl@0.16.0 lib/xterm-addon-webgl.js (global: WebglAddon.WebglAddon)
+addon-canvas.js xterm-addon-canvas@0.5.0 lib/xterm-addon-canvas.js (global: CanvasAddon.CanvasAddon)
+
+Source CDN base: https://cdn.jsdelivr.net/npm
+Do not edit the minified files; re-fetch the exact versions above to update.
+
+All vendored bundles above are MIT-licensed by the xterm.js authors; the full
+notice is in the LICENSE file beside these assets.

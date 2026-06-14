@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <!-- The phone fits xterm to its own screen and renders 1:1; no pinch-zoom. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <link rel="stylesheet" href="xterm.css" />
+  <style>
+    html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #060414;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #060414;
+      /* Phone is authoritative: xterm fits this width, so the body never needs
+         to scroll horizontally. Vertical scrollback lives inside xterm. */
+      overflow: hidden;
+    }
+    #term {
+      /* Fill the available width; the fit addon picks cols/rows to match. */
+      width: 100%;
+      height: 100%;
+      padding: 2px;
+      box-sizing: border-box;
+    }
+    .xterm-viewport::-webkit-scrollbar { width: 6px; }
+    .xterm-viewport::-webkit-scrollbar-thumb { background: #2A2540; border-radius: 3px; }
+    body.exited #term { opacity: 0.45; }
+  </style>
+</head>
+<body>
+  <div id="term"></div>
+  <script src="xterm.js"></script>
+  <script src="addon-fit.js"></script>
+  <script src="addon-webgl.js"></script>
+  <script src="addon-canvas.js"></script>
+  <script>
+    (function () {
+      var term = new Terminal({
+        cursorBlink: true,
+        fontFamily: 'monospace',
+        fontSize: 12,
+        scrollback: 1500,
+        allowProposedApi: true,
+        theme: {
+          background: '#060414',
+          foreground: '#E5E7EB',
+          cursor: '#F472B6',
+          cursorAccent: '#060414',
+          selectionBackground: '#3A2A4A',
+          black: '#1E1B2E',
+          red: '#F87171',
+          green: '#4ADE80',
+          yellow: '#FBBF24',
+          blue: '#60A5FA',
+          magenta: '#F472B6',
+          cyan: '#22D3EE',
+          white: '#E5E7EB',
+          brightBlack: '#6B6488',
+          brightRed: '#FCA5A5',
+          brightGreen: '#86EFAC',
+          brightYellow: '#FDE047',
+          brightBlue: '#93C5FD',
+          brightMagenta: '#F9A8D4',
+          brightCyan: '#67E8F9',
+          brightWhite: '#FFFFFF'
+        }
+      });
+      var fitAddon = new FitAddon.FitAddon();
+      term.loadAddon(fitAddon);
+
+      // Muxy recipe: WebGL renderer with Canvas fallback. If WebGL is
+      // unavailable (or loses its context) fall back to Canvas; if Canvas
+      // also fails, xterm stays on its DOM renderer (no crash).
+      function loadCanvas() {
+        try { term.loadAddon(new CanvasAddon.CanvasAddon()); } catch (e) {}
+      }
+      function loadRenderer() {
+        try {
+          var webgl = new WebglAddon.WebglAddon();
+          webgl.onContextLoss(function () { try { webgl.dispose(); } catch (e) {} loadCanvas(); });
+          term.loadAddon(webgl);
+        } catch (e) {
+          loadCanvas();
+        }
+      }
+
+      var exited = false;
+      var ctrlLatch = false;
+      // The phone is authoritative for size: it fits xterm to its own screen and
+      // sends those cols/rows to the desktop, which adopts them and echoes back.
+      var opened = false;
+      // Guards the onResize bridge against synthetic resizes (resizeTerm's confirm
+      // and the initial fit), so only phone-driven refits propagate upstream.
+      var suppressResizeEcho = false;
+
+      // Ctrl-latch remap: when latched, the next printable a..z (or A..Z) is
+      // remapped to its control byte (1..26). Pure function, mirrored in Kotlin
+      // CtrlLatch.remap for unit testing.
+      function remapCtrl(s) {
+        if (s.length !== 1) return s;
+        var c = s.charCodeAt(0);
+        if (c >= 97 && c <= 122) return String.fromCharCode(c - 96); // a-z -> 1-26
+        if (c >= 65 && c <= 90) return String.fromCharCode(c - 64);  // A-Z -> 1-26
+        return s;
+      }
+
+      function utf8ToB64(str) {
+        var bytes = unescape(encodeURIComponent(str));
+        return btoa(bytes);
+      }
+      function b64ToBytes(b64) {
+        var bin = atob(b64);
+        var len = bin.length;
+        var bytes = new Uint8Array(len);
+        for (var i = 0; i < len; i++) bytes[i] = bin.charCodeAt(i) & 0xff;
+        return bytes;
+      }
+
+      term.onData(function (data) {
+        if (exited) return;
+        var out = data;
+        if (ctrlLatch) {
+          out = remapCtrl(data);
+          ctrlLatch = false;
+          if (window.AndroidTerm && AndroidTerm.onCtrlLatchConsumed) {
+            AndroidTerm.onCtrlLatchConsumed();
+          }
+        }
+        if (window.AndroidTerm) AndroidTerm.onData(utf8ToB64(out));
+      });
+
+      term.onResize(function (size) {
+        if (!opened || suppressResizeEcho) return;
+        if (window.AndroidTerm) AndroidTerm.onResize(size.cols, size.rows);
+      });
+
+      // ---- Android -> JS bridge --------------------------------------------
+      // Coalesce writes per animation frame (Muxy recipe): queue raw byte
+      // chunks and flush them as a single merged write to reduce jank.
+      var _wq = [];
+      var _wScheduled = false;
+      function _flushWrites() {
+        _wScheduled = false;
+        if (!_wq.length) return;
+        var total = 0, i;
+        for (i = 0; i < _wq.length; i++) total += _wq[i].length;
+        var merged = new Uint8Array(total), off = 0;
+        for (i = 0; i < _wq.length; i++) { merged.set(_wq[i], off); off += _wq[i].length; }
+        _wq.length = 0;
+        try { term.write(merged); } catch (e) {}
+      }
+      window.write = function (b64) {
+        try {
+          _wq.push(b64ToBytes(b64));
+          if (!_wScheduled) { _wScheduled = true; requestAnimationFrame(_flushWrites); }
+        } catch (e) {
+          if (window.AndroidTerm && AndroidTerm.onJsError) AndroidTerm.onJsError('write: ' + e);
+        }
+      };
+      // Raw bytes injected by the key bar (already the exact escape sequence).
+      window.writeRaw = function (b64) {
+        if (exited) return;
+        if (window.AndroidTerm) AndroidTerm.onData(b64);
+      };
+      // Phone is authoritative: refit re-runs the fit addon (e.g. on rotation)
+      // and, if the dimensions changed, tells Kotlin to send a resize upstream.
+      // Debounced so a rotate fires ONE refit after the layout settles.
+      var _refitTimer = null;
+      function doRefit() {
+        if (!opened || exited) return;
+        sizeToWindow();
+        var prevCols = term.cols, prevRows = term.rows;
+        try { fitAddon.fit(); } catch (e) {
+          if (window.AndroidTerm && AndroidTerm.onJsError) AndroidTerm.onJsError('refit: ' + e);
+          return;
+        }
+        if (term.cols !== prevCols || term.rows !== prevRows) {
+          if (window.AndroidTerm) AndroidTerm.onResize(term.cols, term.rows);
+        }
+      }
+      window.refit = function () {
+        if (_refitTimer) clearTimeout(_refitTimer);
+        _refitTimer = setTimeout(doRefit, 250);
+      };
+      // Desktop -> JS: it echoes back the phone's size; resize to confirm (no-op
+      // when unchanged), keeping the two ends in lockstep. NEVER triggers upstream.
+      window.resizeTerm = function (cols, rows) {
+        if (term.cols === cols && term.rows === rows) return;
+        suppressResizeEcho = true;
+        try { term.resize(cols, rows); } catch (e) {
+          if (window.AndroidTerm && AndroidTerm.onJsError) AndroidTerm.onJsError('resize: ' + e);
+        } finally {
+          suppressResizeEcho = false;
+        }
+      };
+      window.clearTerm = function () { term.clear(); };
+      window.setExited = function () {
+        exited = true;
+        document.body.classList.add('exited');
+        term.write('\r\n\x1b[2m[session ended]\x1b[0m\r\n');
+        term.options.cursorBlink = false;
+      };
+      window.setCtrlLatch = function (on) { ctrlLatch = !!on; };
+      window.focusTerm = function () {
+        try { term.focus(); } catch (e) {}
+      };
+
+      // Deferred open: at load the container can still be width-0, which would
+      // collapse the fit to cols=1. Wait for a real width, THEN open xterm and
+      // fit it. The fit result IS the phone's authoritative size; report it so
+      // Kotlin opens the socket with these dims. NO keyboard/height-driven refit
+      // ever runs — only initial open and orientation change call fit().
+      // Fit once the container has a real width, then signal readiness so Kotlin
+      // opens the socket. If the width never arrives (cap), connect anyway at the
+      // current size — a wrong-sized terminal you can scroll beats a blank screen.
+      // Wait for the container to reach a STABLE size (width AND height unchanged
+      // across a few frames) before fitting. An early fit on a not-yet-laid-out
+      // container computes too few rows (the "4 rows" bug). Height is consulted
+      // ONLY here, at initial open — the soft keyboard never triggers a refit.
+      // Falls back after a cap so it can never hang.
+      // The CSS height:100% chain collapses to 0 in this WebView (body measures 0
+      // tall even though window.innerHeight is correct), so the fit computed only
+      // 1 row. Force html/body/#term to the real viewport size in PIXELS before
+      // fitting. Called at open and on orientation refit (never on keyboard).
+      function sizeToWindow() {
+        var py = window.innerHeight + 'px', px = window.innerWidth + 'px';
+        document.documentElement.style.height = py;
+        document.body.style.height = py;
+        var host = document.getElementById('term');
+        host.style.width = px;
+        host.style.height = py;
+      }
+      function waitStableThenFit(attempt, lastW, lastH, stable) {
+        var w = window.innerWidth, h = window.innerHeight;
+        var sized = w > 8 && h > 8;
+        stable = (sized && w === lastW && h === lastH) ? stable + 1 : 0;
+        if ((sized && stable >= 3) || attempt >= 90) {
+          sizeToWindow();
+          try { fitAddon.fit(); } catch (e) {
+            if (window.AndroidTerm && AndroidTerm.onJsError) AndroidTerm.onJsError('fit: ' + e);
+          }
+          opened = true;
+          if (window.AndroidTerm) AndroidTerm.onReady(term.cols, term.rows);
+          return;
+        }
+        requestAnimationFrame(function () { waitStableThenFit(attempt + 1, w, h, stable); });
+      }
+      // Open xterm UNCONDITIONALLY so it always renders (never blank), regardless
+      // of whether the container has been laid out yet; fit + readiness follow
+      // once the layout settles.
+      function boot() {
+        var host = document.getElementById('term');
+        term.open(host);
+        // Kill predictive text / autocorrect on xterm's hidden input. A terminal
+        // sends keystrokes straight to the PTY, so when the IME "replaces" a word
+        // (accepting a suggestion) it re-sends the whole thing and duplicates it.
+        try {
+          var ta = term.textarea;
+          if (ta) {
+            ta.setAttribute('autocomplete', 'off');
+            ta.setAttribute('autocorrect', 'off');
+            ta.setAttribute('autocapitalize', 'off');
+            ta.setAttribute('spellcheck', 'false');
+          }
+        } catch (e) {}
+        loadRenderer();
+        waitStableThenFit(0, -1, -1, 0);
+      }
+      if (document.readyState === 'complete') boot();
+      else window.addEventListener('load', boot);
+    })();
+  </script>
+</body>
+</html>

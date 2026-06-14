@@ -1,0 +1,18 @@
+# Xcode / build
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcscmblueprint
+*.xccheckout
+
+# Swift Package Manager
+.swiftpm/
+.build/
+Package.resolved
+
+# Firebase config (per-developer secret — add your own)
+GoogleService-Info.plist
+
+# macOS
+.DS_Store
