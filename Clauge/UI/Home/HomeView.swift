@@ -7,6 +7,13 @@ struct HomeView: View {
 
     private var serverName: String { store.activeDevice?.name ?? "Clauge desktop" }
 
+    /// Red when the desktop is unreachable, green once a fetch succeeds, grey while first loading.
+    private var onlineColor: Color {
+        if vm.offline { return Theme.statusExited }
+        if vm.loaded { return Theme.statusRunning }
+        return Theme.statusIdle
+    }
+
     var body: some View {
         ZStack {
             Theme.background.ignoresSafeArea()
@@ -20,18 +27,19 @@ struct HomeView: View {
                 .padding(.vertical, 10)
 
                 content
-                VersionFooter()
             }
 
             if let title = vm.spawningTitle { spawnOverlay(title) }
             if let toast = vm.toast { toastView(toast) }
         }
-        .navigationTitle(serverName)
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(Theme.background, for: .navigationBar)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button { router.push(.settings) } label: { Image(systemName: "gearshape") }
+            ToolbarItem(placement: .principal) {
+                HStack(spacing: 6) {
+                    Circle().fill(onlineColor).frame(width: 8, height: 8)
+                    Text(serverName).font(.headline).foregroundStyle(Theme.textPrimary)
+                }
             }
         }
         .onAppear { vm.start() }

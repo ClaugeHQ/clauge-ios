@@ -1,7 +1,8 @@
 import SwiftUI
 
-/// Top-level phase switch: onboarding → pairing → paired app. Also routes
-/// notification-tap deep links to the right terminal once paired.
+/// Top-level phase switch: onboarding → device list. The device list is home
+/// even with no devices (it shows an empty state); pairing is reached from
+/// there. Also routes notification-tap deep links to the right terminal.
 struct RootView: View {
     @EnvironmentObject private var store: ServerStore
     @EnvironmentObject private var push: PushCoordinator
@@ -18,8 +19,6 @@ struct RootView: View {
     private var content: some View {
         if !store.onboarded {
             OnboardingView()
-        } else if !store.isPaired {
-            NavigationStack { WelcomeView() }
         } else {
             NavigationStack(path: $router.path) {
                 DevicesView()

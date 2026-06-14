@@ -33,7 +33,7 @@ struct ManualPairView: View {
                                in: RoundedRectangle(cornerRadius: 14))
                     .foregroundStyle(canSubmit ? Theme.background : Theme.textSecondary)
                     .disabled(!canSubmit)
-                    .padding(.top, 8)
+                    .padding(.top, 16)
                 }
                 .padding(20)
             }

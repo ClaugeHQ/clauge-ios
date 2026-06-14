@@ -12,7 +12,9 @@ struct DevicesView: View {
     var body: some View {
         ZStack {
             Theme.background.ignoresSafeArea()
-            VStack(spacing: 0) {
+            if store.devices.isEmpty {
+                EmptyDevices(onAdd: startPairing)
+            } else {
                 List {
                     ForEach(store.devices) { device in
                         DeviceRow(device: device, status: vm.online[device.id])
@@ -29,17 +31,17 @@ struct DevicesView: View {
                 .listStyle(.plain)
                 .scrollContentBackground(.hidden)
                 .refreshable { await vm.refresh() }
-
-                VersionFooter()
             }
         }
-        .navigationTitle("Devices")
+        .navigationTitle("Clauge")
         .toolbarBackground(Theme.background, for: .navigationBar)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button { startPairing() } label: { Image(systemName: "plus") }
+            if !store.devices.isEmpty {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { startPairing() } label: { Image(systemName: "plus") }
+                }
             }
-            ToolbarItem(placement: .topBarLeading) {
+            ToolbarItem(placement: .topBarTrailing) {
                 Button { router.push(.settings) } label: { Image(systemName: "gearshape") }
             }
         }
@@ -79,6 +81,32 @@ struct DevicesView: View {
     private func startPairing() {
         pairBaselineActive = store.activeDeviceId
         showPair = true
+    }
+}
+
+private struct EmptyDevices: View {
+    let onAdd: () -> Void
+    var body: some View {
+        VStack(spacing: 12) {
+            Text("No devices yet")
+                .font(.title3.bold())
+                .foregroundStyle(Theme.textPrimary)
+            Text("Pair your desktop from Settings → Mobile to control it from here.")
+                .font(.subheadline)
+                .foregroundStyle(Theme.textSecondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+            Button(action: onAdd) {
+                Label("Add device", systemImage: "plus")
+                    .font(.headline)
+                    .padding(.vertical, 12)
+                    .padding(.horizontal, 24)
+            }
+            .background(Theme.pink, in: RoundedRectangle(cornerRadius: 14))
+            .foregroundStyle(Theme.background)
+            .padding(.top, 8)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
