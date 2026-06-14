@@ -1,0 +1,58 @@
+name: Build iOS
+
+# Builds the app on a stable Xcode (where the Firebase SPM graph resolves) and
+# uploads an UNSIGNED, sideload-ready .ipa. Install it on your own device with a
+# free Apple ID via Sideloadly / AltStore — no paid developer account needed
+# (7-day expiry, no push). Signing + TestFlight come later, once there's an
+# Apple Developer account.
+
+on:
+  push:
+    branches: [main, "feat/**", "fix/**"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select stable Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate project
+        run: xcodegen generate
+
+      - name: Build (unsigned, device)
+        run: |
+          xcodebuild build \
+            -project Clauge.xcodeproj \
+            -scheme Clauge \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            -skipMacroValidation \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
+          test -d "build/Build/Products/Release-iphoneos/Clauge.app"
+
+      - name: Package sideload-ready IPA
+        run: |
+          APP="build/Build/Products/Release-iphoneos/Clauge.app"
+          mkdir -p Payload
+          cp -R "$APP" Payload/
+          zip -qry Clauge-unsigned.ipa Payload
+          ls -lh Clauge-unsigned.ipa
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Clauge-unsigned-ipa
+          path: Clauge-unsigned.ipa
