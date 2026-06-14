@@ -1,16 +1,21 @@
 name: Build iOS
 
 # Builds the app on a stable Xcode (where the Firebase SPM graph resolves) and
-# uploads an UNSIGNED, sideload-ready .ipa. Install it on your own device with a
-# free Apple ID via Sideloadly / AltStore — no paid developer account needed
-# (7-day expiry, no push). Signing + TestFlight come later, once there's an
-# Apple Developer account.
+# produces an UNSIGNED, sideload-ready .ipa. Install it on your own device with
+# a free Apple ID via Sideloadly / AltStore — no paid developer account needed
+# (7-day expiry, no push). On a `v*` tag the version is taken from the tag and
+# the .ipa is attached to the GitHub release. Signed builds + TestFlight come
+# later, once there's an Apple Developer account.
 
 on:
   push:
     branches: [main, "feat/**", "fix/**"]
+    tags: ["v*"]
   pull_request:
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -29,8 +34,33 @@ jobs:
       - name: Generate project
         run: xcodegen generate
 
-      - name: Build (unsigned, device)
+      - name: Resolve version from tag
+        id: ver
+        env:
+          REF_NAME: ${{ github.ref_name }}
+          IS_TAG: ${{ startsWith(github.ref, 'refs/tags/v') }}
         run: |
+          if [ "$IS_TAG" = "true" ]; then
+            V="${REF_NAME#v}"
+            # Require strict major.minor.patch (optional pre-release); anything
+            # else falls back to the project defaults.
+            if printf '%s' "$V" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
+              CORE="${V%%-*}"
+              MA="${CORE%%.*}"; REST="${CORE#*.}"; MI="${REST%%.*}"; PA="${REST#*.}"
+              echo "marketing=$V" >> "$GITHUB_OUTPUT"
+              echo "build=$(( MA * 10000 + MI * 100 + PA ))" >> "$GITHUB_OUTPUT"
+            fi
+          fi
+
+      - name: Build (unsigned, device)
+        env:
+          MARKETING: ${{ steps.ver.outputs.marketing }}
+          BUILDNUM: ${{ steps.ver.outputs.build }}
+        run: |
+          ARGS=()
+          if [ -n "$MARKETING" ]; then
+            ARGS+=("MARKETING_VERSION=$MARKETING" "CURRENT_PROJECT_VERSION=$BUILDNUM")
+          fi
           xcodebuild build \
             -project Clauge.xcodeproj \
             -scheme Clauge \
@@ -40,7 +70,8 @@ jobs:
             -skipMacroValidation \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY=""
+            CODE_SIGN_IDENTITY="" \
+            "${ARGS[@]}"
           test -d "build/Build/Products/Release-iphoneos/Clauge.app"
 
       - name: Package sideload-ready IPA
@@ -48,11 +79,17 @@ jobs:
           APP="build/Build/Products/Release-iphoneos/Clauge.app"
           mkdir -p Payload
           cp -R "$APP" Payload/
-          zip -qry Clauge-unsigned.ipa Payload
-          ls -lh Clauge-unsigned.ipa
+          zip -qry clauge-ios-unsigned.ipa Payload
+          ls -lh clauge-ios-unsigned.ipa
 
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Clauge-unsigned-ipa
-          path: Clauge-unsigned.ipa
+          name: clauge-ios-unsigned-ipa
+          path: clauge-ios-unsigned.ipa
+
+      - name: Attach to release (tag pushes)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: clauge-ios-unsigned.ipa
