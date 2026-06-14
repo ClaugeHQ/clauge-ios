@@ -4,6 +4,8 @@
 
 <h1 align="center">Clauge for iOS</h1>
 
+<img width="3000" height="1120" alt="clauge-banner-readme" src="https://github.com/user-attachments/assets/78b2395b-89d1-440a-84ad-4770a00b20ea" />
+
 <p align="center"><strong>Your desktop coding sessions, in your pocket.</strong></p>
 
 <p align="center">
