@@ -16,14 +16,19 @@ final class PairViewModel: ObservableObject {
 
     var isBusy: Bool { phase == .waitingApproval }
 
+    enum QRDecode {
+        case ok(QrPayload)
+        case invalid(String)
+    }
+
     /// Decode a scanned QR string into a pairing payload, validating version.
-    func decodeQR(_ raw: String) -> Result<QrPayload, String> {
+    func decodeQR(_ raw: String) -> QRDecode {
         guard let data = raw.data(using: .utf8),
               let payload = try? JSONDecoder().decode(QrPayload.self, from: data) else {
-            return .failure("Not a Clauge pairing QR code")
+            return .invalid("Not a Clauge pairing QR code")
         }
-        guard payload.v == 1 else { return .failure("Unsupported QR version \(payload.v)") }
-        return .success(payload)
+        guard payload.v == 1 else { return .invalid("Unsupported QR version \(payload.v)") }
+        return .ok(payload)
     }
 
     func pair(hosts: [String], port: Int, code: String, nameOverride: String? = nil) async {

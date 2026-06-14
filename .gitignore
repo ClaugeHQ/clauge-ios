@@ -9,6 +9,7 @@ xcuserdata/
 # Swift Package Manager
 .swiftpm/
 .build/
+.spm-cache/
 Package.resolved
 
 # Firebase config (per-developer secret — add your own)

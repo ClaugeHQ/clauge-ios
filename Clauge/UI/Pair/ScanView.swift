@@ -101,10 +101,10 @@ struct ScanView: View {
     private func onScan(_ code: String) {
         guard !didScan, !vm.isBusy else { return }
         switch vm.decodeQR(code) {
-        case .success(let payload):
+        case .ok(let payload):
             didScan = true
             Task { await vm.pair(hosts: payload.hosts, port: payload.port, code: payload.code) }
-        case .failure(let message):
+        case .invalid(let message):
             vm.phase = .error(message)
         }
     }
