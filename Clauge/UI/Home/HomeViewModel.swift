@@ -16,6 +16,16 @@ final class HomeViewModel: ObservableObject {
     private let client = Services.shared.client
     private var poll: Task<Void, Never>?
 
+    /// Consecutive failed refreshes since the last success.
+    private var consecutiveFailures = 0
+    /// Cold-load retry backoff. The first navigation has to resolve the desktop's
+    /// address and hit a possibly-busy server; a single transient miss must not
+    /// drop straight to the "Can't reach" state — retry a few times first.
+    private let firstLoadBackoffs: [Duration] = [.seconds(0.8), .seconds(1.6), .seconds(3.2)]
+    /// Once loaded, how many CONSECUTIVE refresh failures to absorb before
+    /// flagging offline, so a flaky-network blip doesn't flap the loaded list.
+    private let steadyFailureGrace = 2
+
     func start() {
         Task { await refresh() }
         poll = Task { [weak self] in
@@ -29,16 +39,36 @@ final class HomeViewModel: ObservableObject {
     func stop() { poll?.cancel(); poll = nil }
 
     func refresh() async {
-        do {
-            let a = try await client.listAgentSessions()
-            let s = try await client.listSshProfiles()
-            agents = a
-            ssh = s
-            offline = false
-        } catch {
-            offline = true
+        // Retry only the cold first load (nothing on screen yet); a loaded list
+        // takes the single-attempt + grace path below.
+        let retryable = !loaded
+        var attempt = 0
+        while true {
+            do {
+                let a = try await client.listAgentSessions()
+                let s = try await client.listSshProfiles()
+                agents = a
+                ssh = s
+                consecutiveFailures = 0
+                offline = false
+                loaded = true
+                return
+            } catch {
+                if retryable && attempt < firstLoadBackoffs.count {
+                    try? await Task.sleep(for: firstLoadBackoffs[attempt])
+                    attempt += 1
+                    continue
+                }
+                consecutiveFailures += 1
+                // Hold a loaded list through a brief blip — only show "Can't
+                // reach" once failures are sustained. A cold load (never loaded)
+                // surfaces immediately.
+                if !loaded || consecutiveFailures >= steadyFailureGrace {
+                    offline = true
+                }
+                return
+            }
         }
-        loaded = true
     }
 
     /// Resolve a tapped agent row to a terminalId, spawning if needed.
