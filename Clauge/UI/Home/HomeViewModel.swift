@@ -63,7 +63,7 @@ final class HomeViewModel: ObservableObject {
                 // Hold a loaded list through a brief blip — only show "Can't
                 // reach" once failures are sustained. A cold load (never loaded)
                 // surfaces immediately.
-                if !loaded || consecutiveFailures >= steadyFailureGrace {
+                if !loaded || consecutiveFailures > steadyFailureGrace {
                     offline = true
                 }
                 return
