@@ -88,6 +88,12 @@ private struct Joystick: View {
         }
         .frame(width: size, height: size)
         .contentShape(Circle())
+        .accessibilityElement()
+        .accessibilityLabel("Arrow keys")
+        .accessibilityAction(named: "Up") { onDirection(KeyBytes.up) }
+        .accessibilityAction(named: "Down") { onDirection(KeyBytes.down) }
+        .accessibilityAction(named: "Left") { onDirection(KeyBytes.left) }
+        .accessibilityAction(named: "Right") { onDirection(KeyBytes.right) }
         .gesture(
             DragGesture(minimumDistance: 0)
                 .onChanged { g in

@@ -67,9 +67,15 @@ final class TerminalViewModel: ObservableObject {
         bridge.sendKey(KeyBytes.base64(bytes))
     }
 
-    /// Paste the clipboard into the PTY verbatim (no modifier).
+    /// Paste the clipboard into the PTY verbatim. Clear any armed modifier first
+    /// — a raw paste bypasses modifier consumption, so it would otherwise bleed
+    /// into the next key.
     func paste() {
         guard let text = UIPasteboard.general.string, !text.isEmpty else { return }
+        if armedModifier != nil {
+            armedModifier = nil
+            bridge.setModifier(nil)
+        }
         bridge.writeRaw(KeyBytes.base64(Array(text.utf8)))
     }
 
