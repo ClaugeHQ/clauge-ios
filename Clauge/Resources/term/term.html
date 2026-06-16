@@ -132,7 +132,10 @@
           else if (ch >= 0x60 && ch <= 0x7e) mapped = ch - 0x60;
           else if (ch === 0x20) mapped = 0x00;
           else if (ch === 0x3f) mapped = 0x7f;
-          if (mapped !== null) out = new Uint8Array([mapped]);
+          if (mapped !== null) {
+            out = new Uint8Array(bytes);
+            out[0] = mapped;
+          }
         } else if (modifier === 'alt' || modifier === 'meta') {
           var pre = new Uint8Array(bytes.length + 1);
           pre[0] = 0x1b;

@@ -54,6 +54,9 @@ final class HomeViewModel: ObservableObject {
                 loaded = true
                 return
             } catch {
+                // Task cancellation (view teardown, poll stop) isn't a real
+                // failure — bail without counting it or flagging offline.
+                if Task.isCancelled { return }
                 if retryable && attempt < firstLoadBackoffs.count {
                     try? await Task.sleep(for: firstLoadBackoffs[attempt])
                     attempt += 1
