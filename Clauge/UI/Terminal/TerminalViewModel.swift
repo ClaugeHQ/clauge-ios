@@ -1,12 +1,22 @@
 import Foundation
 import SwiftUI
+import UIKit
+
+/// Key-bar modifier. `js` is the value passed to term.html's window.setModifier.
+enum TermModifier: String, CaseIterable {
+    case ctrl, alt
+    var label: String { rawValue }
+    var js: String { rawValue }
+}
 
 @MainActor
 final class TerminalViewModel: ObservableObject {
     let terminalId: String
     let bridge = TerminalBridge()
 
-    @Published var ctrlLatched = false
+    /// Which modifier the chip represents, and whether it's armed for the next key.
+    @Published var modifierSlot: TermModifier = .ctrl
+    @Published var armedModifier: TermModifier?
     @Published var exited = false
     @Published var connected = false
 
@@ -18,7 +28,7 @@ final class TerminalViewModel: ObservableObject {
         bridge.onReady = { [weak self] cols, rows in self?.openSocket(cols: cols, rows: rows) }
         bridge.onData = { [weak self] b64 in self?.socket?.sendInput(base64: b64) }
         bridge.onResize = { [weak self] cols, rows in self?.socket?.sendResize(cols: cols, rows: rows) }
-        bridge.onCtrlLatchConsumed = { [weak self] in self?.ctrlLatched = false }
+        bridge.onCtrlLatchConsumed = { [weak self] in self?.armedModifier = nil }
     }
 
     /// The WebView reported its fit size — open the mirror socket with it.
@@ -39,13 +49,34 @@ final class TerminalViewModel: ObservableObject {
 
     // MARK: Key bar
 
-    func toggleCtrl() {
-        ctrlLatched.toggle()
-        bridge.setCtrlLatch(ctrlLatched)
+    /// Tap the modifier chip: arm the current slot, or disarm if already armed.
+    func toggleModifier() {
+        armedModifier = (armedModifier == modifierSlot) ? nil : modifierSlot
+        bridge.setModifier(armedModifier?.js)
     }
 
+    /// Pick a modifier from the long-press menu: switch the slot and arm it.
+    func pickModifier(_ m: TermModifier) {
+        modifierSlot = m
+        armedModifier = m
+        bridge.setModifier(m.js)
+    }
+
+    /// Key-bar keys go through sendKey so the armed modifier applies (Ctrl+C etc.).
     func sendKey(_ bytes: [UInt8]) {
-        bridge.writeRaw(KeyBytes.base64(bytes))
+        bridge.sendKey(KeyBytes.base64(bytes))
+    }
+
+    /// Paste the clipboard into the PTY verbatim. Clear any armed modifier first
+    /// — a raw paste bypasses modifier consumption, so it would otherwise bleed
+    /// into the next key.
+    func paste() {
+        guard let text = UIPasteboard.general.string, !text.isEmpty else { return }
+        if armedModifier != nil {
+            armedModifier = nil
+            bridge.setModifier(nil)
+        }
+        bridge.writeRaw(KeyBytes.base64(Array(text.utf8)))
     }
 
     func refit() { bridge.refit() }

@@ -93,24 +93,15 @@
       }
 
       var exited = false;
-      var ctrlLatch = false;
+      // Armed key-bar modifier: 'ctrl' | 'alt' | null. The next key (typed or
+      // sent from the bar) is transformed, then it clears.
+      var modifier = null;
       // The phone is authoritative for size: it fits xterm to its own screen and
       // sends those cols/rows to the desktop, which adopts them and echoes back.
       var opened = false;
       // Guards the onResize bridge against synthetic resizes (resizeTerm's confirm
       // and the initial fit), so only phone-driven refits propagate upstream.
       var suppressResizeEcho = false;
-
-      // Ctrl-latch remap: when latched, the next printable a..z (or A..Z) is
-      // remapped to its control byte (1..26). Pure function, mirrored in Kotlin
-      // CtrlLatch.remap for unit testing.
-      function remapCtrl(s) {
-        if (s.length !== 1) return s;
-        var c = s.charCodeAt(0);
-        if (c >= 97 && c <= 122) return String.fromCharCode(c - 96); // a-z -> 1-26
-        if (c >= 65 && c <= 90) return String.fromCharCode(c - 64);  // A-Z -> 1-26
-        return s;
-      }
 
       function utf8ToB64(str) {
         var bytes = unescape(encodeURIComponent(str));
@@ -123,18 +114,43 @@
         for (var i = 0; i < len; i++) bytes[i] = bin.charCodeAt(i) & 0xff;
         return bytes;
       }
+      function bytesToB64(bytes) {
+        var bin = '';
+        for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+        return btoa(bin);
+      }
+
+      // Apply the armed modifier to the first byte of a key, then clear it.
+      // ctrl -> control byte (a/A->1..26, @->0, space->0, ?->0x7f); alt ->
+      // ESC-prefixed (Alt+key).
+      function applyModifier(bytes) {
+        if (!modifier || !bytes.length) return bytes;
+        var ch = bytes[0], out = bytes;
+        if (modifier === 'ctrl') {
+          var mapped = null;
+          if (ch >= 0x40 && ch <= 0x5f) mapped = ch - 0x40;
+          else if (ch >= 0x60 && ch <= 0x7e) mapped = ch - 0x60;
+          else if (ch === 0x20) mapped = 0x00;
+          else if (ch === 0x3f) mapped = 0x7f;
+          if (mapped !== null) {
+            out = new Uint8Array(bytes);
+            out[0] = mapped;
+          }
+        } else if (modifier === 'alt' || modifier === 'meta') {
+          var pre = new Uint8Array(bytes.length + 1);
+          pre[0] = 0x1b;
+          pre.set(bytes, 1);
+          out = pre;
+        }
+        modifier = null;
+        if (window.AndroidTerm && AndroidTerm.onCtrlLatchConsumed) AndroidTerm.onCtrlLatchConsumed();
+        return out;
+      }
 
       term.onData(function (data) {
         if (exited) return;
-        var out = data;
-        if (ctrlLatch) {
-          out = remapCtrl(data);
-          ctrlLatch = false;
-          if (window.AndroidTerm && AndroidTerm.onCtrlLatchConsumed) {
-            AndroidTerm.onCtrlLatchConsumed();
-          }
-        }
-        if (window.AndroidTerm) AndroidTerm.onData(utf8ToB64(out));
+        var bytes = applyModifier(b64ToBytes(utf8ToB64(data)));
+        if (window.AndroidTerm) AndroidTerm.onData(bytesToB64(bytes));
       });
 
       term.onResize(function (size) {
@@ -165,10 +181,21 @@
           if (window.AndroidTerm && AndroidTerm.onJsError) AndroidTerm.onJsError('write: ' + e);
         }
       };
-      // Raw bytes injected by the key bar (already the exact escape sequence).
+      // Raw bytes sent verbatim (e.g. a clipboard paste) — no modifier applied.
       window.writeRaw = function (b64) {
         if (exited) return;
         if (window.AndroidTerm) AndroidTerm.onData(b64);
+      };
+      // Key-bar keys (esc/tab/arrows): pass through the armed modifier so e.g.
+      // Ctrl+C or Alt+/ work the same as a typed modified key.
+      window.sendKey = function (b64) {
+        if (exited) return;
+        try {
+          var bytes = applyModifier(b64ToBytes(b64));
+          if (window.AndroidTerm) AndroidTerm.onData(bytesToB64(bytes));
+        } catch (e) {
+          if (window.AndroidTerm && AndroidTerm.onJsError) AndroidTerm.onJsError('sendKey: ' + e);
+        }
       };
       // Phone is authoritative: refit re-runs the fit addon (e.g. on rotation)
       // and, if the dimensions changed, tells Kotlin to send a resize upstream.
@@ -208,7 +235,7 @@
         term.write('\r\n\x1b[2m[session ended]\x1b[0m\r\n');
         term.options.cursorBlink = false;
       };
-      window.setCtrlLatch = function (on) { ctrlLatch = !!on; };
+      window.setModifier = function (m) { modifier = m || null; };
       window.focusTerm = function () {
         try { term.focus(); } catch (e) {}
       };

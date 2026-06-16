@@ -23,7 +23,8 @@ final class TerminalBridge: NSObject, ObservableObject {
     func resizeTerm(_ cols: Int, _ rows: Int) { eval("window.resizeTerm(\(cols),\(rows))") }
     func refit() { eval("window.refit()") }
     func setExited() { eval("window.setExited()") }
-    func setCtrlLatch(_ on: Bool) { eval("window.setCtrlLatch(\(on ? "true" : "false"))") }
+    func setModifier(_ js: String?) { eval("window.setModifier(\(js.map { "'\($0)'" } ?? "null"))") }
+    func sendKey(_ b64: String) { eval("window.sendKey('\(b64)')") }
     func focusTerm() { eval("window.focusTerm()") }
     func clearTerm() { eval("window.clearTerm()") }
 
