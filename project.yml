@@ -14,8 +14,8 @@ packages:
 
 settings:
   base:
-    MARKETING_VERSION: "0.1.0"
-    CURRENT_PROJECT_VERSION: "1"
+    MARKETING_VERSION: "0.3.1"
+    CURRENT_PROJECT_VERSION: "301"
     SWIFT_VERSION: "5.0"
     DEVELOPMENT_LANGUAGE: en
 
@@ -39,7 +39,7 @@ targets:
         product: FirebaseMessaging
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.clauge.mobile
+        PRODUCT_BUNDLE_IDENTIFIER: in.clauge.app
         PRODUCT_NAME: Clauge
         INFOPLIST_FILE: Clauge/Info.plist
         CODE_SIGN_ENTITLEMENTS: Clauge/Clauge.entitlements

@@ -35,6 +35,7 @@
 		91E56D5B3325E8D01F94B252 /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7712553EC28029D8A65F72AC /* WelcomeView.swift */; };
 		946CAD79EB98BFB784E66D98 /* Services.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA52C0D1D456ABE9B3F3A080 /* Services.swift */; };
 		9B22FDAA263CEA00DAEF45E9 /* CompanionClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 374A20842D85D796A5DD50B4 /* CompanionClient.swift */; };
+		A11251A21FE3AF28BBE600A6 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = B0C055204E30409E759C4B6E /* GoogleService-Info.plist */; };
 		A14E701FB63DF6B87601B825 /* term in Resources */ = {isa = PBXBuildFile; fileRef = 189AB3F94156F4D6B1A00B6E /* term */; };
 		AA07BAF382D158BFC881AA60 /* AttachDecision.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8476259C440C83264074C562 /* AttachDecision.swift */; };
 		B8D5A757C473E5CAB10F764A /* Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = D00C2546838B7FC34AC70F9E /* Keychain.swift */; };
@@ -55,7 +56,7 @@
 		080AF578D3100A9C70F4BBAA /* VersionFooter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VersionFooter.swift; sourceTree = "<group>"; };
 		098B63B400539045BD4A5AD2 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		09FB6A17F2C52CD92E53004A /* KeyBytes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyBytes.swift; sourceTree = "<group>"; };
-		0CE2E2E64271F3A34E7CCCD9 /* Clauge.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Clauge.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		0CE2E2E64271F3A34E7CCCD9 /* Clauge.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Clauge.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		16CBF60820D8D907FFC5C60C /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		189AB3F94156F4D6B1A00B6E /* term */ = {isa = PBXFileReference; lastKnownFileType = folder; name = term; path = Clauge/Resources/term; sourceTree = SOURCE_ROOT; };
 		18EEFA281C5C8205B3CDD215 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -76,6 +77,7 @@
 		8C9E35E925F09D7A0BD154B2 /* DevicesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevicesView.swift; sourceTree = "<group>"; };
 		8F22C540EF67BB74E859141B /* ManualPairView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManualPairView.swift; sourceTree = "<group>"; };
 		AA52C0D1D456ABE9B3F3A080 /* Services.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services.swift; sourceTree = "<group>"; };
+		B0C055204E30409E759C4B6E /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		C071929013DD50EE57614319 /* SettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewModel.swift; sourceTree = "<group>"; };
 		CB0F2A1F3AEF88983BFA22D0 /* ClaugeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaugeApp.swift; sourceTree = "<group>"; };
 		CF36489C03D8EC819DB86B3A /* StatusDot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusDot.swift; sourceTree = "<group>"; };
@@ -249,6 +251,7 @@
 				0123E9A8FEF384904A6D5625 /* Assets.xcassets */,
 				838603945C5A81AA5934F5BC /* Clauge.entitlements */,
 				CB0F2A1F3AEF88983BFA22D0 /* ClaugeApp.swift */,
+				B0C055204E30409E759C4B6E /* GoogleService-Info.plist */,
 				8068628C463680ED1E42CC36 /* Info.plist */,
 			);
 			path = Clauge;
@@ -360,6 +363,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				8876D4EFD2221A9A6D16FE60 /* Assets.xcassets in Resources */,
+				A11251A21FE3AF28BBE600A6 /* GoogleService-Info.plist in Resources */,
 				A14E701FB63DF6B87601B825 /* term in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -446,7 +450,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 300;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_LANGUAGE = en;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -466,7 +470,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 0.3.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -512,7 +516,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 300;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_LANGUAGE = en;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -526,7 +530,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 0.3.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -545,6 +549,8 @@
 				CODE_SIGN_ENTITLEMENTS = Clauge/Clauge.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 301;
+				DEVELOPMENT_TEAM = V3A8N342VM;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Clauge/Info.plist;
@@ -553,9 +559,13 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.clauge.mobile;
+				MARKETING_VERSION = 0.3.1;
+				PRODUCT_BUNDLE_IDENTIFIER = in.clauge.app;
 				PRODUCT_NAME = Clauge;
 				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
@@ -568,6 +578,8 @@
 				CODE_SIGN_ENTITLEMENTS = Clauge/Clauge.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 301;
+				DEVELOPMENT_TEAM = V3A8N342VM;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Clauge/Info.plist;
@@ -576,9 +588,13 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.clauge.mobile;
+				MARKETING_VERSION = 0.3.1;
+				PRODUCT_BUNDLE_IDENTIFIER = in.clauge.app;
 				PRODUCT_NAME = Clauge;
 				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;

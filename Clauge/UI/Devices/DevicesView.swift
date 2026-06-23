@@ -12,39 +12,15 @@ struct DevicesView: View {
     var body: some View {
         ZStack {
             Theme.background.ignoresSafeArea()
-            if store.devices.isEmpty {
-                EmptyDevices(onAdd: startPairing)
-            } else {
-                List {
-                    ForEach(store.devices) { device in
-                        DeviceRow(device: device, status: vm.online[device.id])
-                            .listRowBackground(Theme.surface)
-                            .contentShape(Rectangle())
-                            .onTapGesture { tap(device) }
-                            .swipeActions {
-                                Button(role: .destructive) { removeTarget = device } label: {
-                                    Label("Remove", systemImage: "trash")
-                                }
-                            }
-                    }
-                }
-                .listStyle(.plain)
-                .scrollContentBackground(.hidden)
-                .refreshable { await vm.refresh() }
+            VStack(spacing: 0) {
+                header
+                content
             }
         }
-        .navigationTitle("Clauge")
-        .toolbarBackground(Theme.background, for: .navigationBar)
-        .toolbar {
-            if !store.devices.isEmpty {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { startPairing() } label: { Image(systemName: "plus") }
-                }
-            }
-            ToolbarItem(placement: .topBarTrailing) {
-                Button { router.push(.settings) } label: { Image(systemName: "gearshape") }
-            }
-        }
+        // Custom header keeps the "Clauge" wordmark and the gear on the
+        // same row (a large nav title would drop the title below the bar
+        // buttons, leaving them misaligned).
+        .toolbar(.hidden, for: .navigationBar)
         .sheet(isPresented: $showPair) {
             NavigationStack { WelcomeView() }
                 .tint(Theme.pink)
@@ -67,6 +43,57 @@ struct DevicesView: View {
         }
         .onAppear { vm.start() }
         .onDisappear { vm.stop() }
+    }
+
+    private var header: some View {
+        HStack(alignment: .center, spacing: 12) {
+            Text("Clauge")
+                .font(.largeTitle.bold())
+                .foregroundStyle(Theme.textPrimary)
+            Spacer()
+            if !store.devices.isEmpty {
+                headerButton("plus") { startPairing() }
+            }
+            headerButton("gearshape") { router.push(.settings) }
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+        .padding(.bottom, 12)
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        if store.devices.isEmpty {
+            EmptyDevices(onAdd: startPairing)
+        } else {
+            List {
+                ForEach(store.devices) { device in
+                    DeviceRow(device: device, status: vm.online[device.id])
+                        .listRowBackground(Theme.surface)
+                        .contentShape(Rectangle())
+                        .onTapGesture { tap(device) }
+                        .swipeActions {
+                            Button(role: .destructive) { removeTarget = device } label: {
+                                Label("Remove", systemImage: "trash")
+                            }
+                        }
+                }
+            }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .refreshable { await vm.refresh() }
+        }
+    }
+
+    private func headerButton(_ icon: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(Theme.pink)
+                .frame(width: 40, height: 40)
+                .background(Theme.surfaceHigh, in: Circle())
+                .overlay(Circle().stroke(Theme.outlineVariant, lineWidth: 1))
+        }
     }
 
     private func tap(_ device: Device) {
