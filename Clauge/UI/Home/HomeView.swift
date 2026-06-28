@@ -129,11 +129,11 @@ struct HomeContent: View {
     // MARK: Actions
 
     private func openAgent(_ session: AgentSessionDto) {
-        Task { if let id = await vm.openAgent(session) { router.push(.terminal(id)) } }
+        vm.openAgent(session) { id in router.push(.terminal(id)) }
     }
 
     private func openSsh(_ profile: SshProfileDto) {
-        Task { if let id = await vm.openSsh(profile) { router.push(.terminal(id)) } }
+        vm.openSsh(profile) { id in router.push(.terminal(id)) }
     }
 
     // MARK: Pieces
@@ -156,6 +156,12 @@ struct HomeContent: View {
             VStack(spacing: 14) {
                 ProgressView().tint(Theme.pink)
                 Text("Starting \(title)…").foregroundStyle(Theme.textPrimary)
+                Text("Make sure the desktop app is open")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.textSecondary)
+                Button("Cancel") { vm.cancelSpawn() }
+                    .foregroundStyle(Theme.pink)
+                    .padding(.top, 6)
             }
         }
     }

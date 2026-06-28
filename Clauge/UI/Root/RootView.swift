@@ -12,7 +12,10 @@ struct RootView: View {
         content
             .onAppear { routeDeepLinkIfPossible() }
             .onChange(of: push.pendingDeepLink) { _ in routeDeepLinkIfPossible() }
-            .onChange(of: store.isPaired) { _ in routeDeepLinkIfPossible() }
+            .onChange(of: store.isPaired) { paired in
+                if !paired { popIfDeviceScoped() }
+                routeDeepLinkIfPossible()
+            }
     }
 
     @ViewBuilder
@@ -39,10 +42,26 @@ struct RootView: View {
 
     private func routeDeepLinkIfPossible() {
         guard store.isPaired, let link = push.pendingDeepLink else { return }
-        if let name = link.serverName, let id = store.deviceId(byName: name) {
+        if let name = link.serverName, let id = store.deviceId(byName: name), id != store.activeDeviceId {
+            // The push named a different paired device. Activate it and drop the
+            // previous device's cockpit so backing out of the terminal doesn't
+            // land on a stale screen scoped to the old device.
             store.setActive(id)
+            router.reset()
         }
         router.openTerminal(link.terminalId)
         _ = push.consume()
+    }
+
+    /// Lost the active device (disconnect / 401) while inside a device-scoped
+    /// screen — fall back to the device list, which shows its empty state.
+    /// App-level screens (Settings) work unpaired, so they stay put.
+    private func popIfDeviceScoped() {
+        switch router.path.last {
+        case .cockpit, .browser, .deviceInfo, .terminal:
+            router.reset()
+        default:
+            break
+        }
     }
 }

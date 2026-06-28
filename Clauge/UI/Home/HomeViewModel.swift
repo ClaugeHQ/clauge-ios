@@ -16,6 +16,15 @@ final class HomeViewModel: ObservableObject {
     private let client = Services.shared.client
     private var poll: Task<Void, Never>?
 
+    /// The open can hang if the desktop app is backgrounded/asleep (the frontend
+    /// that drives auth modals isn't running). Bound the spawn so the loader never
+    /// sticks forever; Cancel aborts immediately.
+    private let spawnTimeout: Duration = .seconds(45)
+    private var spawnTask: Task<Void, Never>?
+    private var spawnRequestId: String?
+
+    private struct TimeoutError: Error {}
+
     /// Consecutive failed refreshes since the last success.
     private var consecutiveFailures = 0
     /// Cold-load retry backoff. The first navigation has to resolve the desktop's
@@ -80,34 +89,82 @@ final class HomeViewModel: ObservableObject {
         }
     }
 
-    /// Resolve a tapped agent row to a terminalId, spawning if needed.
-    func openAgent(_ session: AgentSessionDto) async -> String? {
+    /// Resolve a tapped agent row to a terminalId, spawning if needed. Live
+    /// sessions open immediately; a spawn shows the cancellable "Starting…"
+    /// overlay and calls `onReady` with the returned terminalId on success.
+    func openAgent(_ session: AgentSessionDto, onReady: @escaping (String) -> Void) {
         switch AttachDecision.forAgent(session) {
         case .live(let id):
-            return id
+            onReady(id)
         case .spawn:
-            spawningTitle = session.title
-            defer { spawningTitle = nil }
-            do { return try await client.spawnAgent(sessionId: session.id) }
-            catch {
-                toast = "Couldn't start \(session.title) — check the desktop is reachable"
-                return nil
+            startSpawn(title: session.title, onReady: onReady) { [client] rid in
+                try await client.spawnAgent(sessionId: session.id, requestId: rid)
             }
         }
     }
 
-    func openSsh(_ profile: SshProfileDto) async -> String? {
+    func openSsh(_ profile: SshProfileDto, onReady: @escaping (String) -> Void) {
         switch AttachDecision.forSsh(profile) {
         case .live(let id):
-            return id
+            onReady(id)
         case .spawn:
-            spawningTitle = profile.name
-            defer { spawningTitle = nil }
-            do { return try await client.spawnSsh(profileId: profile.id) }
-            catch {
-                toast = "Couldn't start \(profile.name) — check the desktop is reachable"
-                return nil
+            startSpawn(title: profile.name, onReady: onReady) { [client] rid in
+                try await client.spawnSsh(profileId: profile.id, requestId: rid)
             }
+        }
+    }
+
+    /// Run the spawn handshake under a timeout with a fresh requestId. On
+    /// Cancel or timeout we tell the desktop to abort the open — otherwise a
+    /// lidded/backgrounded desktop opens the tab anyway when it wakes.
+    private func startSpawn(title: String,
+                            onReady: @escaping (String) -> Void,
+                            spawn: @escaping (String) async throws -> String) {
+        let requestId = UUID().uuidString
+        spawningTitle = title
+        spawnRequestId = requestId
+        spawnTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                let terminalId = try await self.withTimeout { try await spawn(requestId) }
+                self.clearSpawn()
+                onReady(terminalId)
+            } catch is CancellationError {
+                // User tapped Cancel; cleanup already done in cancelSpawn().
+            } catch is TimeoutError {
+                self.clearSpawn()
+                try? await self.client.cancelOpen(requestId: requestId)
+                self.toast = "\(title) is taking too long — open the desktop app and try again"
+            } catch {
+                self.clearSpawn()
+                self.toast = "Couldn't start \(title) — check the desktop is reachable"
+            }
+        }
+    }
+
+    /// Cancel an in-flight spawn from the loader's Cancel button.
+    func cancelSpawn() {
+        let rid = spawnRequestId
+        spawnTask?.cancel()
+        clearSpawn()
+        if let rid { Task { [client] in try? await client.cancelOpen(requestId: rid) } }
+    }
+
+    private func clearSpawn() {
+        spawningTitle = nil
+        spawnRequestId = nil
+        spawnTask = nil
+    }
+
+    private func withTimeout(_ operation: @escaping () async throws -> String) async throws -> String {
+        try await withThrowingTaskGroup(of: String.self) { group in
+            group.addTask { try await operation() }
+            group.addTask { [spawnTimeout] in
+                try await Task.sleep(for: spawnTimeout)
+                throw TimeoutError()
+            }
+            defer { group.cancelAll() }
+            return try await group.next()!
         }
     }
 
