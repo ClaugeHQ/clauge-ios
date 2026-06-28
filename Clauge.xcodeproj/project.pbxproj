@@ -11,6 +11,7 @@
 		0A8D4E3F6352F2DF8E3F2D40 /* DevicesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47A9220ED5AFFF822F6D31F8 /* DevicesViewModel.swift */; };
 		0EE684D379BF5DA8C00FD7B2 /* TerminalViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 234005181E8C1924B6CF0EA3 /* TerminalViewModel.swift */; };
 		0F6ECA5110853EC297AB9F52 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16CBF60820D8D907FFC5C60C /* RootView.swift */; };
+		1A5801E7A1693A11DB19B49C /* SysMonViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCCDD8304A3D675D46E20B7C /* SysMonViewModel.swift */; };
 		22DF05A5FF7A87E3F65F50F2 /* CompanionWebSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = E00E3DEA39B10ECCBDA93C5A /* CompanionWebSocket.swift */; };
 		31207EEA370D5348B102A4C5 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D22C3D3BC95A51324F80539E /* SettingsView.swift */; };
 		379245334914C3CC372349CB /* PairViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F74A0B5C225F86C531A878 /* PairViewModel.swift */; };
@@ -18,11 +19,13 @@
 		407476B16BD34C85D270B77B /* DevicesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C9E35E925F09D7A0BD154B2 /* DevicesView.swift */; };
 		534477C9B4CE4C751FD7E07D /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D51C5FBDDFFC237B6CFB0320 /* HomeViewModel.swift */; };
 		563946FC9A08A469DC657CE0 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = CA9127D05970285DE07EFBEA /* FirebaseMessaging */; };
+		571145F8C7C62F3166D8EBA5 /* FilesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D379931AD3C7FF6B20ABEC9B /* FilesView.swift */; };
 		5B99CEFAC81BE73AB47AA4F7 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18EEFA281C5C8205B3CDD215 /* AppDelegate.swift */; };
 		5C870CABCD25B7A0217CC9A9 /* VersionFooter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 080AF578D3100A9C70F4BBAA /* VersionFooter.swift */; };
 		646DA00317319D8B763B6C0A /* KeyBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A0850E916A6C8683E0E0F50 /* KeyBar.swift */; };
 		68A3A25AB387BDB7D040B5FE /* ScanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A90FBC7568741495721A95 /* ScanView.swift */; };
 		6D0578061B05527F7743E30C /* BackoffPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = D49F6EA49CC584D5E8E993B6 /* BackoffPolicy.swift */; };
+		71EA297F123AA83457F29490 /* TerminalsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68E13FD69ADB5A3D99C133D6 /* TerminalsViewModel.swift */; };
 		75B2DD8147A7E07C4E42C2C9 /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C071929013DD50EE57614319 /* SettingsViewModel.swift */; };
 		75CEFF9E87070D71DA37C245 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2052019C9BF765FF63E3865E /* HomeView.swift */; };
 		79F5AC7DEF30CA0AE0479B77 /* RelativeTime.swift in Sources */ = {isa = PBXBuildFile; fileRef = D376FE92CB94E5042B06BD26 /* RelativeTime.swift */; };
@@ -34,19 +37,25 @@
 		9105FA58666B7F2238E93AA8 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 098B63B400539045BD4A5AD2 /* Theme.swift */; };
 		91E56D5B3325E8D01F94B252 /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7712553EC28029D8A65F72AC /* WelcomeView.swift */; };
 		946CAD79EB98BFB784E66D98 /* Services.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA52C0D1D456ABE9B3F3A080 /* Services.swift */; };
+		987B9E719C7BB77ED229E496 /* CockpitView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49F9DF4A072A431CC9A065BD /* CockpitView.swift */; };
 		9B22FDAA263CEA00DAEF45E9 /* CompanionClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 374A20842D85D796A5DD50B4 /* CompanionClient.swift */; };
 		A11251A21FE3AF28BBE600A6 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = B0C055204E30409E759C4B6E /* GoogleService-Info.plist */; };
 		A14E701FB63DF6B87601B825 /* term in Resources */ = {isa = PBXBuildFile; fileRef = 189AB3F94156F4D6B1A00B6E /* term */; };
 		AA07BAF382D158BFC881AA60 /* AttachDecision.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8476259C440C83264074C562 /* AttachDecision.swift */; };
+		AB98FCD0C2304240B447665F /* BrowserWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE252665430E8215570FC72B /* BrowserWebView.swift */; };
 		B8D5A757C473E5CAB10F764A /* Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = D00C2546838B7FC34AC70F9E /* Keychain.swift */; };
+		BE7A257831B0C75946EF6351 /* FilesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E59FDC012CBFE99C33D4FB0 /* FilesViewModel.swift */; };
 		C066777CAF86FDC0D4026B25 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = A0ABFFDDA9BFE39C206627EC /* FirebaseCore */; };
 		C92158C225BC6985C50FEE3C /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B8993CADED637CF5B5F1B2 /* OnboardingView.swift */; };
+		C9DE3266BFCDF0293B939383 /* BrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 641F4D9418F660551D30E49C /* BrowserView.swift */; };
+		CD158D985F20D4E037073F4F /* DeviceInfoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 164DF350FF14B142DDDE90F7 /* DeviceInfoView.swift */; };
 		D3DBFB20BE127574F74FA724 /* StatusDot.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF36489C03D8EC819DB86B3A /* StatusDot.swift */; };
 		D8BA94D5221A1698C7AA230B /* ClaugeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB0F2A1F3AEF88983BFA22D0 /* ClaugeApp.swift */; };
 		DA73DEB03260B552670A2087 /* TerminalWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D32A220568D6DB28CFE7332D /* TerminalWebView.swift */; };
 		DBF1CF75AEB494D772B4DD20 /* AppInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8140826ADA86D4C27CFE8EFD /* AppInfo.swift */; };
 		DD313E31B5CFCB6C65130E4D /* TerminalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 736A48B039B87727A59E9439 /* TerminalView.swift */; };
 		ED00E05521472C0DE86339B3 /* Router.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2318941642748F361069488 /* Router.swift */; };
+		F11F1AB3B53272AEBF96C05A /* BrowserViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B12250B5D7CE237696DFBBEC /* BrowserViewModel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -56,17 +65,22 @@
 		080AF578D3100A9C70F4BBAA /* VersionFooter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VersionFooter.swift; sourceTree = "<group>"; };
 		098B63B400539045BD4A5AD2 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		09FB6A17F2C52CD92E53004A /* KeyBytes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyBytes.swift; sourceTree = "<group>"; };
-		0CE2E2E64271F3A34E7CCCD9 /* Clauge.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Clauge.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		0CE2E2E64271F3A34E7CCCD9 /* Clauge.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Clauge.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		164DF350FF14B142DDDE90F7 /* DeviceInfoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceInfoView.swift; sourceTree = "<group>"; };
 		16CBF60820D8D907FFC5C60C /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		189AB3F94156F4D6B1A00B6E /* term */ = {isa = PBXFileReference; lastKnownFileType = folder; name = term; path = Clauge/Resources/term; sourceTree = SOURCE_ROOT; };
 		18EEFA281C5C8205B3CDD215 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		1E59FDC012CBFE99C33D4FB0 /* FilesViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilesViewModel.swift; sourceTree = "<group>"; };
 		2052019C9BF765FF63E3865E /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		234005181E8C1924B6CF0EA3 /* TerminalViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalViewModel.swift; sourceTree = "<group>"; };
 		35C6CB315E28363E5F33312B /* ServerStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerStore.swift; sourceTree = "<group>"; };
 		374A20842D85D796A5DD50B4 /* CompanionClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionClient.swift; sourceTree = "<group>"; };
 		47A9220ED5AFFF822F6D31F8 /* DevicesViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevicesViewModel.swift; sourceTree = "<group>"; };
+		49F9DF4A072A431CC9A065BD /* CockpitView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CockpitView.swift; sourceTree = "<group>"; };
 		4BFFEF2B876D4A4599ED66C7 /* PushManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushManager.swift; sourceTree = "<group>"; };
+		641F4D9418F660551D30E49C /* BrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserView.swift; sourceTree = "<group>"; };
 		68A90FBC7568741495721A95 /* ScanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanView.swift; sourceTree = "<group>"; };
+		68E13FD69ADB5A3D99C133D6 /* TerminalsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalsViewModel.swift; sourceTree = "<group>"; };
 		6A0850E916A6C8683E0E0F50 /* KeyBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyBar.swift; sourceTree = "<group>"; };
 		736A48B039B87727A59E9439 /* TerminalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalView.swift; sourceTree = "<group>"; };
 		7712553EC28029D8A65F72AC /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
@@ -78,13 +92,17 @@
 		8F22C540EF67BB74E859141B /* ManualPairView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManualPairView.swift; sourceTree = "<group>"; };
 		AA52C0D1D456ABE9B3F3A080 /* Services.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services.swift; sourceTree = "<group>"; };
 		B0C055204E30409E759C4B6E /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		B12250B5D7CE237696DFBBEC /* BrowserViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserViewModel.swift; sourceTree = "<group>"; };
+		BCCDD8304A3D675D46E20B7C /* SysMonViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SysMonViewModel.swift; sourceTree = "<group>"; };
 		C071929013DD50EE57614319 /* SettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewModel.swift; sourceTree = "<group>"; };
 		CB0F2A1F3AEF88983BFA22D0 /* ClaugeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaugeApp.swift; sourceTree = "<group>"; };
+		CE252665430E8215570FC72B /* BrowserWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserWebView.swift; sourceTree = "<group>"; };
 		CF36489C03D8EC819DB86B3A /* StatusDot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusDot.swift; sourceTree = "<group>"; };
 		D00C2546838B7FC34AC70F9E /* Keychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keychain.swift; sourceTree = "<group>"; };
 		D22C3D3BC95A51324F80539E /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		D32A220568D6DB28CFE7332D /* TerminalWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalWebView.swift; sourceTree = "<group>"; };
 		D376FE92CB94E5042B06BD26 /* RelativeTime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelativeTime.swift; sourceTree = "<group>"; };
+		D379931AD3C7FF6B20ABEC9B /* FilesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilesView.swift; sourceTree = "<group>"; };
 		D49F6EA49CC584D5E8E993B6 /* BackoffPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackoffPolicy.swift; sourceTree = "<group>"; };
 		D51C5FBDDFFC237B6CFB0320 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
 		E00E3DEA39B10ECCBDA93C5A /* CompanionWebSocket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionWebSocket.swift; sourceTree = "<group>"; };
@@ -109,13 +127,17 @@
 		272A38514BF3D3C8E918A941 /* UI */ = {
 			isa = PBXGroup;
 			children = (
+				D4B2EE62947E404A9DBEC7A7 /* Browser */,
+				873BEEAF8160EAB3FC7778D2 /* Cockpit */,
 				F55936C827973012DD51A48A /* Components */,
 				8C3BAB4D99869DFC2A95BD9A /* Devices */,
+				5B26EBA29521BD038AE60141 /* Files */,
 				559524625AF57516A42392D3 /* Home */,
 				DFD2A0B83965F4D2509F13A1 /* Onboarding */,
 				52A8ADD4956BBA27C2D6FD63 /* Pair */,
 				AA7332948E81A91EA4540F3F /* Root */,
 				BC1B179433EFA7DC4FBD071A /* Settings */,
+				881D966E7B275B86397A4810 /* SysMon */,
 				837B2E5BE9A44C240DDB9205 /* Terminal */,
 				098B63B400539045BD4A5AD2 /* Theme.swift */,
 			);
@@ -168,6 +190,15 @@
 			path = Home;
 			sourceTree = "<group>";
 		};
+		5B26EBA29521BD038AE60141 /* Files */ = {
+			isa = PBXGroup;
+			children = (
+				D379931AD3C7FF6B20ABEC9B /* FilesView.swift */,
+				1E59FDC012CBFE99C33D4FB0 /* FilesViewModel.swift */,
+			);
+			path = Files;
+			sourceTree = "<group>";
+		};
 		75124F010C567D52642DDC51 = {
 			isa = PBXGroup;
 			children = (
@@ -189,11 +220,29 @@
 			children = (
 				6A0850E916A6C8683E0E0F50 /* KeyBar.swift */,
 				09FB6A17F2C52CD92E53004A /* KeyBytes.swift */,
+				68E13FD69ADB5A3D99C133D6 /* TerminalsViewModel.swift */,
 				736A48B039B87727A59E9439 /* TerminalView.swift */,
 				234005181E8C1924B6CF0EA3 /* TerminalViewModel.swift */,
 				D32A220568D6DB28CFE7332D /* TerminalWebView.swift */,
 			);
 			path = Terminal;
+			sourceTree = "<group>";
+		};
+		873BEEAF8160EAB3FC7778D2 /* Cockpit */ = {
+			isa = PBXGroup;
+			children = (
+				49F9DF4A072A431CC9A065BD /* CockpitView.swift */,
+			);
+			path = Cockpit;
+			sourceTree = "<group>";
+		};
+		881D966E7B275B86397A4810 /* SysMon */ = {
+			isa = PBXGroup;
+			children = (
+				164DF350FF14B142DDDE90F7 /* DeviceInfoView.swift */,
+				BCCDD8304A3D675D46E20B7C /* SysMonViewModel.swift */,
+			);
+			path = SysMon;
 			sourceTree = "<group>";
 		};
 		8C3BAB4D99869DFC2A95BD9A /* Devices */ = {
@@ -255,6 +304,16 @@
 				8068628C463680ED1E42CC36 /* Info.plist */,
 			);
 			path = Clauge;
+			sourceTree = "<group>";
+		};
+		D4B2EE62947E404A9DBEC7A7 /* Browser */ = {
+			isa = PBXGroup;
+			children = (
+				641F4D9418F660551D30E49C /* BrowserView.swift */,
+				B12250B5D7CE237696DFBBEC /* BrowserViewModel.swift */,
+				CE252665430E8215570FC72B /* BrowserWebView.swift */,
+			);
+			path = Browser;
 			sourceTree = "<group>";
 		};
 		DA8EB9AF6EEC0259D41D730C /* Core */ = {
@@ -379,11 +438,18 @@
 				DBF1CF75AEB494D772B4DD20 /* AppInfo.swift in Sources */,
 				AA07BAF382D158BFC881AA60 /* AttachDecision.swift in Sources */,
 				6D0578061B05527F7743E30C /* BackoffPolicy.swift in Sources */,
+				C9DE3266BFCDF0293B939383 /* BrowserView.swift in Sources */,
+				F11F1AB3B53272AEBF96C05A /* BrowserViewModel.swift in Sources */,
+				AB98FCD0C2304240B447665F /* BrowserWebView.swift in Sources */,
 				D8BA94D5221A1698C7AA230B /* ClaugeApp.swift in Sources */,
+				987B9E719C7BB77ED229E496 /* CockpitView.swift in Sources */,
 				9B22FDAA263CEA00DAEF45E9 /* CompanionClient.swift in Sources */,
 				22DF05A5FF7A87E3F65F50F2 /* CompanionWebSocket.swift in Sources */,
+				CD158D985F20D4E037073F4F /* DeviceInfoView.swift in Sources */,
 				407476B16BD34C85D270B77B /* DevicesView.swift in Sources */,
 				0A8D4E3F6352F2DF8E3F2D40 /* DevicesViewModel.swift in Sources */,
+				571145F8C7C62F3166D8EBA5 /* FilesView.swift in Sources */,
+				BE7A257831B0C75946EF6351 /* FilesViewModel.swift in Sources */,
 				75CEFF9E87070D71DA37C245 /* HomeView.swift in Sources */,
 				534477C9B4CE4C751FD7E07D /* HomeViewModel.swift in Sources */,
 				646DA00317319D8B763B6C0A /* KeyBar.swift in Sources */,
@@ -404,9 +470,11 @@
 				31207EEA370D5348B102A4C5 /* SettingsView.swift in Sources */,
 				75B2DD8147A7E07C4E42C2C9 /* SettingsViewModel.swift in Sources */,
 				D3DBFB20BE127574F74FA724 /* StatusDot.swift in Sources */,
+				1A5801E7A1693A11DB19B49C /* SysMonViewModel.swift in Sources */,
 				DD313E31B5CFCB6C65130E4D /* TerminalView.swift in Sources */,
 				0EE684D379BF5DA8C00FD7B2 /* TerminalViewModel.swift in Sources */,
 				DA73DEB03260B552670A2087 /* TerminalWebView.swift in Sources */,
+				71EA297F123AA83457F29490 /* TerminalsViewModel.swift in Sources */,
 				9105FA58666B7F2238E93AA8 /* Theme.swift in Sources */,
 				5C870CABCD25B7A0217CC9A9 /* VersionFooter.swift in Sources */,
 				91E56D5B3325E8D01F94B252 /* WelcomeView.swift in Sources */,
@@ -450,7 +518,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 300;
+				CURRENT_PROJECT_VERSION = 301;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_LANGUAGE = en;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -470,7 +538,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				MARKETING_VERSION = 0.3.0;
+				MARKETING_VERSION = 0.3.1;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -516,7 +584,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 300;
+				CURRENT_PROJECT_VERSION = 301;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_LANGUAGE = en;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -530,7 +598,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				MARKETING_VERSION = 0.3.0;
+				MARKETING_VERSION = 0.3.1;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -549,8 +617,6 @@
 				CODE_SIGN_ENTITLEMENTS = Clauge/Clauge.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 301;
-				DEVELOPMENT_TEAM = V3A8N342VM;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Clauge/Info.plist;
@@ -559,13 +625,9 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.3.1;
 				PRODUCT_BUNDLE_IDENTIFIER = in.clauge.app;
 				PRODUCT_NAME = Clauge;
 				SDKROOT = iphoneos;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
@@ -578,8 +640,6 @@
 				CODE_SIGN_ENTITLEMENTS = Clauge/Clauge.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 301;
-				DEVELOPMENT_TEAM = V3A8N342VM;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Clauge/Info.plist;
@@ -588,13 +648,9 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.3.1;
 				PRODUCT_BUNDLE_IDENTIFIER = in.clauge.app;
 				PRODUCT_NAME = Clauge;
 				SDKROOT = iphoneos;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
