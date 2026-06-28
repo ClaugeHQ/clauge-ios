@@ -25,6 +25,9 @@ struct RootView: View {
                     .navigationDestination(for: Router.Route.self) { route in
                         switch route {
                         case .home: HomeView()
+                        case .cockpit: CockpitView()
+                        case .deviceInfo: DeviceInfoView()
+                        case .browser: BrowserView()
                         case .terminal(let id): TerminalView(terminalId: id)
                         case .settings: SettingsView()
                         }

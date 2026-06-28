@@ -26,6 +26,12 @@ final class HomeViewModel: ObservableObject {
     /// flagging offline, so a flaky-network blip doesn't flap the loaded list.
     private let steadyFailureGrace = 2
 
+    /// Kick a first load as soon as the model exists so a cockpit tab never
+    /// shows an empty list before `start()` runs.
+    init() {
+        Task { await refresh() }
+    }
+
     func start() {
         Task { await refresh() }
         poll = Task { [weak self] in

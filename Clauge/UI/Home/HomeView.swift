@@ -2,7 +2,6 @@ import SwiftUI
 
 struct HomeView: View {
     @EnvironmentObject private var store: ServerStore
-    @EnvironmentObject private var router: Router
     @StateObject private var vm = HomeViewModel()
 
     private var serverName: String { store.activeDevice?.name ?? "Clauge desktop" }
@@ -26,11 +25,8 @@ struct HomeView: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
 
-                content
+                HomeContent(vm: vm, section: vm.tab)
             }
-
-            if let title = vm.spawningTitle { spawnOverlay(title) }
-            if let toast = vm.toast { toastView(toast) }
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(Theme.background, for: .navigationBar)
@@ -45,6 +41,26 @@ struct HomeView: View {
         .onAppear { vm.start() }
         .onDisappear { vm.stop() }
     }
+}
+
+/// The Agent or SSH session list for the active device, without app chrome —
+/// the host (Home screen or Cockpit) owns the header and navigation. A pure
+/// body so it can be dropped into any cockpit tab.
+struct HomeContent: View {
+    @ObservedObject var vm: HomeViewModel
+    @EnvironmentObject private var store: ServerStore
+    @EnvironmentObject private var router: Router
+    let section: HomeViewModel.Tab
+
+    private var serverName: String { store.activeDevice?.name ?? "Clauge desktop" }
+
+    var body: some View {
+        ZStack {
+            content
+            if let title = vm.spawningTitle { spawnOverlay(title) }
+            if let toast = vm.toast { toastView(toast) }
+        }
+    }
 
     @ViewBuilder
     private var content: some View {
@@ -53,7 +69,7 @@ struct HomeView: View {
                 title: "Can't reach \(serverName)",
                 detail: "Make sure Clauge desktop is running on the same network."
             )
-        } else if vm.tab == .agent {
+        } else if section == .agent {
             agentList
         } else {
             sshList
