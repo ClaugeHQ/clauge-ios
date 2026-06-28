@@ -31,7 +31,10 @@ struct RootView: View {
                         case .cockpit: CockpitView()
                         case .deviceInfo: DeviceInfoView()
                         case .browser: BrowserView()
-                        case .terminal(let id): TerminalView(terminalId: id)
+                        // .id(id) forces a fresh view + ViewModel when the shell id
+                        // changes (New Terminal / switch), so it doesn't reuse the
+                        // previous terminal's screen.
+                        case .terminal(let id): TerminalView(terminalId: id).id(id)
                         case .settings: SettingsView()
                         }
                     }

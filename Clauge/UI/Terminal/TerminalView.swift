@@ -35,30 +35,41 @@ struct TerminalView: View {
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
-                Menu {
-                    ForEach(Array(terminals.tabs.enumerated()), id: \.element) { index, id in
-                        Button {
-                            switchTo(id)
-                        } label: {
-                            Label(
-                                "Shell \(index + 1)" + (id == terminalId ? "  •" : ""),
-                                systemImage: "terminal"
-                            )
+                // The shell switcher (▾ list / New Terminal) belongs only to the
+                // generic Terminal tab's shells. Agent/SSH sessions aren't tracked
+                // in TerminalsViewModel.tabs, so they get a plain close instead.
+                if terminals.tabs.contains(terminalId) {
+                    Menu {
+                        ForEach(Array(terminals.tabs.enumerated()), id: \.element) { index, id in
+                            Button {
+                                switchTo(id)
+                            } label: {
+                                Label(
+                                    "Shell \(index + 1)" + (id == terminalId ? "  •" : ""),
+                                    systemImage: "terminal"
+                                )
+                            }
                         }
+                        Divider()
+                        Button {
+                            newTerminal()
+                        } label: {
+                            Label("New Terminal", systemImage: "plus")
+                        }
+                        Button(role: .destructive) {
+                            closeCurrent()
+                        } label: {
+                            Label("Close this terminal", systemImage: "xmark")
+                        }
+                    } label: {
+                        Image(systemName: "chevron.down")
                     }
-                    Divider()
+                } else {
                     Button {
-                        newTerminal()
+                        Task { await vm.end(); dismiss() }
                     } label: {
-                        Label("New Terminal", systemImage: "plus")
+                        Image(systemName: "xmark")
                     }
-                    Button(role: .destructive) {
-                        closeCurrent()
-                    } label: {
-                        Label("Close this terminal", systemImage: "xmark")
-                    }
-                } label: {
-                    Image(systemName: "chevron.down")
                 }
             }
         }

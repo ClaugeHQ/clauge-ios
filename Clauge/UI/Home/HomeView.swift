@@ -84,22 +84,30 @@ struct HomeContent: View {
             emptyState(title: "No active sessions on this device",
                        detail: "Start one on your desktop — it'll show up here.")
         } else {
-            List {
-                ForEach(vm.agentGroups) { group in
-                    Section {
-                        ForEach(group.sessions) { session in
-                            AgentRow(session: session)
-                                .listRowBackground(Theme.surface)
-                                .contentShape(Rectangle())
-                                .onTapGesture { openAgent(session) }
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 16) {
+                    ForEach(vm.agentGroups) { group in
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(group.label)
+                                .font(.caption)
+                                .foregroundStyle(Theme.textSecondary)
+                                .padding(.horizontal, 4)
+                            VStack(spacing: 10) {
+                                ForEach(group.sessions) { session in
+                                    AgentRow(session: session)
+                                        .padding(.horizontal, 16)
+                                        .padding(.vertical, 12)
+                                        .background(Theme.surface, in: RoundedRectangle(cornerRadius: 16))
+                                        .contentShape(Rectangle())
+                                        .onTapGesture { openAgent(session) }
+                                }
+                            }
                         }
-                    } header: {
-                        Text(group.label).foregroundStyle(Theme.textSecondary)
                     }
                 }
+                .padding(.horizontal, 16)
+                .padding(.top, 12)
             }
-            .listStyle(.insetGrouped)
-            .scrollContentBackground(.hidden)
             .refreshable { await vm.refresh() }
         }
     }
@@ -112,16 +120,20 @@ struct HomeContent: View {
             emptyState(title: "No SSH profiles on this device",
                        detail: "Add one on your desktop to connect from here.")
         } else {
-            List {
-                ForEach(vm.ssh) { profile in
-                    SshRow(profile: profile)
-                        .listRowBackground(Theme.surface)
-                        .contentShape(Rectangle())
-                        .onTapGesture { openSsh(profile) }
+            ScrollView {
+                LazyVStack(spacing: 10) {
+                    ForEach(vm.ssh) { profile in
+                        SshRow(profile: profile)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 14)
+                            .background(Theme.surface, in: RoundedRectangle(cornerRadius: 16))
+                            .contentShape(Rectangle())
+                            .onTapGesture { openSsh(profile) }
+                    }
                 }
+                .padding(.horizontal, 16)
+                .padding(.top, 12)
             }
-            .listStyle(.insetGrouped)
-            .scrollContentBackground(.hidden)
             .refreshable { await vm.refresh() }
         }
     }

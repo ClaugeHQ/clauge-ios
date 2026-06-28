@@ -65,7 +65,7 @@
 		080AF578D3100A9C70F4BBAA /* VersionFooter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VersionFooter.swift; sourceTree = "<group>"; };
 		098B63B400539045BD4A5AD2 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		09FB6A17F2C52CD92E53004A /* KeyBytes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyBytes.swift; sourceTree = "<group>"; };
-		0CE2E2E64271F3A34E7CCCD9 /* Clauge.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Clauge.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		0CE2E2E64271F3A34E7CCCD9 /* Clauge.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Clauge.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		164DF350FF14B142DDDE90F7 /* DeviceInfoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceInfoView.swift; sourceTree = "<group>"; };
 		16CBF60820D8D907FFC5C60C /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		189AB3F94156F4D6B1A00B6E /* term */ = {isa = PBXFileReference; lastKnownFileType = folder; name = term; path = Clauge/Resources/term; sourceTree = SOURCE_ROOT; };
@@ -617,6 +617,7 @@
 				CODE_SIGN_ENTITLEMENTS = Clauge/Clauge.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = V3A8N342VM;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Clauge/Info.plist;
@@ -640,6 +641,7 @@
 				CODE_SIGN_ENTITLEMENTS = Clauge/Clauge.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = V3A8N342VM;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Clauge/Info.plist;
