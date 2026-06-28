@@ -5,6 +5,7 @@ struct TerminalView: View {
     @EnvironmentObject private var router: Router
     @Environment(\.dismiss) private var dismiss
     @StateObject private var vm: TerminalViewModel
+    @ObservedObject private var terminals = TerminalsViewModel.shared
 
     init(terminalId: String) {
         self.terminalId = terminalId
@@ -34,16 +35,67 @@ struct TerminalView: View {
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    Task {
-                        await vm.end()
-                        dismiss()
+                Menu {
+                    ForEach(Array(terminals.tabs.enumerated()), id: \.element) { index, id in
+                        Button {
+                            switchTo(id)
+                        } label: {
+                            Label(
+                                "Shell \(index + 1)" + (id == terminalId ? "  •" : ""),
+                                systemImage: "terminal"
+                            )
+                        }
+                    }
+                    Divider()
+                    Button {
+                        newTerminal()
+                    } label: {
+                        Label("New Terminal", systemImage: "plus")
+                    }
+                    Button(role: .destructive) {
+                        closeCurrent()
+                    } label: {
+                        Label("Close this terminal", systemImage: "xmark")
                     }
                 } label: {
-                    Image(systemName: "xmark")
+                    Image(systemName: "chevron.down")
                 }
             }
         }
         .onDisappear { vm.detach() }
+    }
+
+    private func replaceTop(with id: String) {
+        guard !router.path.isEmpty else { return }
+        router.path[router.path.count - 1] = .terminal(id)
+    }
+
+    private func switchTo(_ id: String) {
+        guard id != terminalId else { return }
+        vm.detach()
+        terminals.setCurrent(id)
+        replaceTop(with: id)
+    }
+
+    private func newTerminal() {
+        vm.detach()
+        Task {
+            if let id = await terminals.spawn() {
+                replaceTop(with: id)
+            }
+        }
+    }
+
+    private func closeCurrent() {
+        Task {
+            await vm.end()
+            terminals.remove(terminalId)
+            if let next = terminals.currentOrLast() {
+                terminals.setCurrent(next)
+                replaceTop(with: next)
+            } else {
+                dismiss()
+            }
+        }
     }
 }
