@@ -130,6 +130,12 @@ final class BrowserViewModel: ObservableObject {
         recents = Array(([entry] + rest).prefix(20))
     }
 
+    /// Recents are session-only — dropped when the user leaves the Browser
+    /// (and naturally on app close, since nothing is persisted).
+    func clearRecents() {
+        recents = []
+    }
+
     func authToken() async -> String? {
         await client.authToken()
     }

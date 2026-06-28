@@ -29,6 +29,7 @@ struct BrowserView: View {
             loading = false
             loadError = nil
         }
+        .onDisappear { vm.clearRecents() }
     }
 
     private var currentWebUrl: String {
