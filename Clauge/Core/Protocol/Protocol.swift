@@ -104,14 +104,173 @@ struct NewSessionSpec: Codable {
 struct SpawnAgentRequest: Codable {
     let sessionId: String?
     let newSession: NewSessionSpec?
+    /// Phone-generated id so the open can be cancelled before it resolves.
+    var requestId: String? = nil
 }
 
 struct SpawnSshRequest: Codable {
     let profileId: String
+    var requestId: String? = nil
+}
+
+struct CancelOpenRequest: Codable {
+    let requestId: String
 }
 
 struct SpawnResponse: Codable {
     let terminalId: String
+}
+
+// MARK: - System metrics (GET /v1/sys/metrics)
+
+struct SysMetricsDto: Codable {
+    let serverName: String
+    let platform: String
+    let uptimeSecs: Int
+    let cpu: CpuDto
+    let memory: MemoryDto
+    let battery: BatteryDto?
+    let volumes: [VolumeDto]
+
+    enum CodingKeys: String, CodingKey {
+        case serverName, platform, uptimeSecs, cpu, memory, battery, volumes
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        serverName = try c.decodeIfPresent(String.self, forKey: .serverName) ?? ""
+        platform = try c.decodeIfPresent(String.self, forKey: .platform) ?? ""
+        uptimeSecs = try c.decodeIfPresent(Int.self, forKey: .uptimeSecs) ?? 0
+        cpu = try c.decode(CpuDto.self, forKey: .cpu)
+        memory = try c.decode(MemoryDto.self, forKey: .memory)
+        battery = try c.decodeIfPresent(BatteryDto.self, forKey: .battery)
+        volumes = try c.decodeIfPresent([VolumeDto].self, forKey: .volumes) ?? []
+    }
+}
+
+struct CpuDto: Codable {
+    let usagePct: Double
+    let brand: String
+    let cores: Int
+}
+
+struct MemoryDto: Codable {
+    let totalBytes: Int
+    let usedBytes: Int
+    let availableBytes: Int
+}
+
+struct BatteryDto: Codable {
+    let percent: Int
+    let charging: Bool
+}
+
+struct VolumeDto: Codable, Identifiable {
+    let name: String
+    let mountPoint: String
+    let totalBytes: Int
+    let usedBytes: Int
+    let availableBytes: Int
+    var id: String { mountPoint }
+}
+
+// MARK: - Files (/v1/fs/*)
+
+struct FsEntryDto: Codable, Identifiable, Equatable {
+    let name: String
+    let path: String
+    let isDir: Bool
+    let size: Int
+    var id: String { path }
+
+    enum CodingKeys: String, CodingKey { case name, path, isDir, size }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        name = try c.decodeIfPresent(String.self, forKey: .name) ?? ""
+        path = try c.decodeIfPresent(String.self, forKey: .path) ?? ""
+        isDir = try c.decodeIfPresent(Bool.self, forKey: .isDir) ?? false
+        size = try c.decodeIfPresent(Int.self, forKey: .size) ?? 0
+    }
+}
+
+struct FsListDto: Codable {
+    let path: String
+    let parent: String?
+    let entries: [FsEntryDto]
+
+    enum CodingKeys: String, CodingKey { case path, parent, entries }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        path = try c.decodeIfPresent(String.self, forKey: .path) ?? ""
+        parent = try c.decodeIfPresent(String.self, forKey: .parent)
+        entries = try c.decodeIfPresent([FsEntryDto].self, forKey: .entries) ?? []
+    }
+}
+
+struct FsReadDto: Codable {
+    let path: String
+    let binary: Bool
+    let tooLarge: Bool
+    let content: String?
+    let size: Int?
+
+    enum CodingKeys: String, CodingKey { case path, binary, tooLarge, content, size }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        path = try c.decodeIfPresent(String.self, forKey: .path) ?? ""
+        binary = try c.decodeIfPresent(Bool.self, forKey: .binary) ?? false
+        tooLarge = try c.decodeIfPresent(Bool.self, forKey: .tooLarge) ?? false
+        content = try c.decodeIfPresent(String.self, forKey: .content)
+        size = try c.decodeIfPresent(Int.self, forKey: .size)
+    }
+}
+
+struct FsSearchDto: Codable {
+    let entries: [FsEntryDto]
+
+    enum CodingKeys: String, CodingKey { case entries }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        entries = try c.decodeIfPresent([FsEntryDto].self, forKey: .entries) ?? []
+    }
+}
+
+struct FsPathBody: Codable { let path: String }
+struct FsWriteBody: Codable { let path: String; let content: String }
+
+// MARK: - Ports (/v1/ports)
+
+struct PortInfoDto: Codable, Identifiable, Equatable {
+    let port: Int
+    let bindAddr: String
+    let pid: Int?
+    let process: String?
+    var id: String { "\(port)-\(bindAddr)" }
+
+    enum CodingKeys: String, CodingKey { case port, bindAddr, pid, process }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        port = try c.decodeIfPresent(Int.self, forKey: .port) ?? 0
+        bindAddr = try c.decodeIfPresent(String.self, forKey: .bindAddr) ?? ""
+        pid = try c.decodeIfPresent(Int.self, forKey: .pid)
+        process = try c.decodeIfPresent(String.self, forKey: .process)
+    }
+}
+
+struct PortsDto: Codable {
+    let ports: [PortInfoDto]
+
+    enum CodingKeys: String, CodingKey { case ports }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        ports = try c.decodeIfPresent([PortInfoDto].self, forKey: .ports) ?? []
+    }
 }
 
 // MARK: - Misc
