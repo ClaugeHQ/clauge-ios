@@ -23,10 +23,19 @@ final class TerminalViewModel: ObservableObject {
     private let client = Services.shared.client
     private var socket: CompanionWebSocket?
 
+    /// Offline review demo: no socket — the transcript is written to the bridge
+    /// and typed keys are echoed locally.
+    private let isDemo: Bool
+    private var demoStarted = false
+
     init(terminalId: String) {
         self.terminalId = terminalId
+        self.isDemo = Services.shared.store.demoMode || terminalId.hasPrefix("demo")
         bridge.onReady = { [weak self] cols, rows in self?.openSocket(cols: cols, rows: rows) }
-        bridge.onData = { [weak self] b64 in self?.socket?.sendInput(base64: b64) }
+        bridge.onData = { [weak self] b64 in
+            guard let self else { return }
+            if self.isDemo { self.demoEcho(b64) } else { self.socket?.sendInput(base64: b64) }
+        }
         bridge.onResize = { [weak self] cols, rows in self?.socket?.sendResize(cols: cols, rows: rows) }
         bridge.onCtrlLatchConsumed = { [weak self] in self?.armedModifier = nil }
     }
@@ -34,6 +43,7 @@ final class TerminalViewModel: ObservableObject {
     /// The WebView reported its fit size — open the mirror socket with it.
     private func openSocket(cols: Int, rows: Int) {
         guard socket == nil else { return }
+        if isDemo { startDemo(); return }
         let ws = CompanionWebSocket(client: client, terminalId: terminalId)
         ws.onReplay = { [weak self] b64 in self?.bridge.write(b64) }
         ws.onOut = { [weak self] b64 in self?.bridge.write(b64) }
@@ -46,6 +56,34 @@ final class TerminalViewModel: ObservableObject {
         socket = ws
         ws.connect(cols: cols, rows: rows)
     }
+
+    // MARK: Demo session
+
+    /// Play a scripted transcript once the WebView is ready, then leave a live
+    /// prompt that echoes typed keys — no shell, no socket.
+    private func startDemo() {
+        guard !demoStarted else { return }
+        demoStarted = true
+        connected = true
+        bridge.write(b64(DemoTerminal.transcript))
+    }
+
+    /// Echo locally so the session feels live: newline reprints the prompt,
+    /// backspace erases, everything else is written verbatim.
+    private func demoEcho(_ input: String) {
+        guard let data = Data(base64Encoded: input) else { return }
+        var out: [UInt8] = []
+        for byte in data {
+            switch byte {
+            case 0x0d, 0x0a: out.append(contentsOf: Array("\r\n\(DemoTerminal.prompt)".utf8))
+            case 0x7f, 0x08: out.append(contentsOf: [0x08, 0x20, 0x08])
+            default: out.append(byte)
+            }
+        }
+        bridge.write(Data(out).base64EncodedString())
+    }
+
+    private func b64(_ s: String) -> String { Data(s.utf8).base64EncodedString() }
 
     // MARK: Key bar
 
@@ -91,4 +129,26 @@ final class TerminalViewModel: ObservableObject {
         try? await client.endTerminal(terminalId)
         socket?.close()
     }
+}
+
+/// Scripted content for the offline review demo terminal.
+private enum DemoTerminal {
+    static let prompt = "demo@Demo-Desktop ~/projects/web $ "
+
+    static let transcript: String = {
+        let lines = [
+            "\(prompt)npm run dev",
+            "",
+            "> web@1.0.0 dev",
+            "> vite",
+            "",
+            "  VITE v5.2.0  ready in 412 ms",
+            "",
+            "  \u{279C}  Local:   http://localhost:3000/",
+            "  \u{279C}  press h + enter to show help",
+            "",
+            prompt,
+        ]
+        return lines.joined(separator: "\r\n")
+    }()
 }

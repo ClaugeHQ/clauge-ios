@@ -8,9 +8,14 @@ struct ManualPairView: View {
     @State private var code = ""
 
     private var port: Int? { Int(portText).flatMap { (1...65535).contains($0) ? $0 : nil } }
+    private var isDemoCode: Bool {
+        code.trimmingCharacters(in: .whitespaces).uppercased() == "DEMO"
+    }
     private var canSubmit: Bool {
-        !host.trimmingCharacters(in: .whitespaces).isEmpty && port != nil
-            && !code.trimmingCharacters(in: .whitespaces).isEmpty && !vm.isBusy
+        if vm.isBusy { return false }
+        if isDemoCode { return true }
+        return !host.trimmingCharacters(in: .whitespaces).isEmpty && port != nil
+            && !code.trimmingCharacters(in: .whitespaces).isEmpty
     }
 
     var body: some View {

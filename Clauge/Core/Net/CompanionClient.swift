@@ -153,6 +153,7 @@ final class CompanionClient {
     }
 
     func healthz() async -> Bool {
+        if await store.demoMode { return true }
         guard let device = await store.activeDevice else { return false }
         for h in device.hosts where await probe(host: h, port: device.port) { return true }
         return false
@@ -161,19 +162,23 @@ final class CompanionClient {
     /// True if any of a device's hosts answers `/healthz`. Used by the
     /// device list to show online/offline.
     func reachable(_ device: Device) async -> Bool {
+        if await store.demoMode { return true }
         for h in device.hosts where await probe(host: h, port: device.port) { return true }
         return false
     }
 
     func listAgentSessions() async throws -> [AgentSessionDto] {
-        try decode(try await run(authedRequest("/v1/sessions/agent", method: "GET")))
+        if await store.demoMode { return Demo.agentSessions }
+        return try decode(try await run(authedRequest("/v1/sessions/agent", method: "GET")))
     }
 
     func listSshProfiles() async throws -> [SshProfileDto] {
-        try decode(try await run(authedRequest("/v1/sessions/ssh", method: "GET")))
+        if await store.demoMode { return Demo.sshProfiles }
+        return try decode(try await run(authedRequest("/v1/sessions/ssh", method: "GET")))
     }
 
     func spawnAgent(sessionId: String, requestId: String? = nil) async throws -> String {
+        if await store.demoMode { return Demo.terminalId }
         var req = try await authedRequest("/v1/sessions/agent", method: "POST")
         req.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
         req.httpBody = try JSONEncoder().encode(SpawnAgentRequest(sessionId: sessionId, newSession: nil, requestId: requestId))
@@ -182,6 +187,7 @@ final class CompanionClient {
     }
 
     func spawnSsh(profileId: String, requestId: String? = nil) async throws -> String {
+        if await store.demoMode { return Demo.terminalId }
         var req = try await authedRequest("/v1/sessions/ssh", method: "POST")
         req.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
         req.httpBody = try JSONEncoder().encode(SpawnSshRequest(profileId: profileId, requestId: requestId))
@@ -190,6 +196,7 @@ final class CompanionClient {
     }
 
     func spawnShell(cwd: String? = nil) async throws -> String {
+        if await store.demoMode { return Demo.terminalId }
         var req = try await authedRequest("/v1/sessions/shell", method: "POST")
         req.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
         if let cwd = cwd, !cwd.isEmpty {
@@ -203,6 +210,7 @@ final class CompanionClient {
 
     /// Abort an in-flight spawn the desktop hasn't finished opening.
     func cancelOpen(requestId: String) async throws {
+        if await store.demoMode { return }
         var req = try await authedRequest("/v1/sessions/cancel", method: "POST")
         req.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
         req.httpBody = try JSONEncoder().encode(CancelOpenRequest(requestId: requestId))
@@ -212,28 +220,33 @@ final class CompanionClient {
     // MARK: - System metrics
 
     func sysMetrics() async throws -> SysMetricsDto {
-        try decode(try await run(authedRequest("/v1/sys/metrics", method: "GET")))
+        if await store.demoMode { return Demo.sysMetrics }
+        return try decode(try await run(authedRequest("/v1/sys/metrics", method: "GET")))
     }
 
     // MARK: - Files
 
     func fsList(path: String?, hidden: Bool) async throws -> FsListDto {
+        if await store.demoMode { return Demo.fsList(path) }
         var q = [URLQueryItem(name: "hidden", value: hidden ? "true" : "false")]
         if let p = path, !p.isEmpty { q.append(URLQueryItem(name: "path", value: p)) }
         return try decode(try await run(authedRequest("/v1/fs/list", method: "GET", query: q)))
     }
 
     func fsRead(path: String) async throws -> FsReadDto {
-        try decode(try await run(authedRequest("/v1/fs/read", method: "GET", query: [URLQueryItem(name: "path", value: path)])))
+        if await store.demoMode { return Demo.fsRead(path) }
+        return try decode(try await run(authedRequest("/v1/fs/read", method: "GET", query: [URLQueryItem(name: "path", value: path)])))
     }
 
     func fsSearch(path: String?, query: String) async throws -> FsSearchDto {
+        if await store.demoMode { return Demo.fsSearch }
         var q = [URLQueryItem(name: "q", value: query)]
         if let p = path, !p.isEmpty { q.append(URLQueryItem(name: "path", value: p)) }
         return try decode(try await run(authedRequest("/v1/fs/search", method: "GET", query: q)))
     }
 
     func fsMkdir(path: String) async throws {
+        if await store.demoMode { return }
         var req = try await authedRequest("/v1/fs/mkdir", method: "POST")
         req.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
         req.httpBody = try JSONEncoder().encode(FsPathBody(path: path))
@@ -241,6 +254,7 @@ final class CompanionClient {
     }
 
     func fsWrite(path: String, content: String) async throws {
+        if await store.demoMode { return }
         var req = try await authedRequest("/v1/fs/write", method: "POST")
         req.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
         req.httpBody = try JSONEncoder().encode(FsWriteBody(path: path, content: content))
@@ -248,14 +262,17 @@ final class CompanionClient {
     }
 
     func fsDelete(path: String) async throws {
+        if await store.demoMode { return }
         _ = try await run(authedRequest("/v1/fs/delete", method: "DELETE", query: [URLQueryItem(name: "path", value: path)]))
     }
 
     func fsDownload(path: String) async throws -> Data {
-        try await run(authedRequest("/v1/fs/download", method: "GET", query: [URLQueryItem(name: "path", value: path)]))
+        if await store.demoMode { return Demo.downloadBytes }
+        return try await run(authedRequest("/v1/fs/download", method: "GET", query: [URLQueryItem(name: "path", value: path)]))
     }
 
     func fsUpload(dir: String, name: String, data: Data) async throws {
+        if await store.demoMode { return }
         var req = try await authedRequest("/v1/fs/upload", method: "POST",
                                          query: [URLQueryItem(name: "path", value: dir),
                                                  URLQueryItem(name: "name", value: name)])
@@ -267,11 +284,13 @@ final class CompanionClient {
     // MARK: - Ports + reverse proxy
 
     func ports() async throws -> PortsDto {
-        try decode(try await run(authedRequest("/v1/ports", method: "GET")))
+        if await store.demoMode { return Demo.ports }
+        return try decode(try await run(authedRequest("/v1/ports", method: "GET")))
     }
 
     /// Base URL of the desktop's reverse proxy to a localhost dev port.
     func proxyBase(port: Int) async -> URL? {
+        if await store.demoMode { return Demo.proxyBase(port: port) }
         guard let device = await store.activeDevice else { return nil }
         let host = await reachableHost(device)
         if host.isEmpty { return nil }
@@ -287,18 +306,22 @@ final class CompanionClient {
     func authToken() async -> String? { await store.activeToken }
 
     func endTerminal(_ terminalId: String) async throws {
+        if await store.demoMode { return }
         _ = try await run(authedRequest("/v1/term/\(terminalId)", method: "DELETE"))
     }
 
     func recentProjects() async throws -> [String] {
-        try decode(try await run(authedRequest("/v1/projects/recent", method: "GET")))
+        if await store.demoMode { return Demo.recentProjects }
+        return try decode(try await run(authedRequest("/v1/projects/recent", method: "GET")))
     }
 
     func serverInfo() async throws -> ServerInfoDto {
-        try decode(try await run(authedRequest("/v1/server/info", method: "GET")))
+        if await store.demoMode { return Demo.serverInfo }
+        return try decode(try await run(authedRequest("/v1/server/info", method: "GET")))
     }
 
     func registerFcm(token: String) async throws {
+        if await store.demoMode { return }
         var req = try await authedRequest("/v1/device/fcm", method: "POST")
         req.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
         req.httpBody = try JSONEncoder().encode(FcmTokenRequest(token: token))
@@ -312,4 +335,124 @@ final class CompanionClient {
         let host = await reachableHost(device)
         return (host, device.port, token)
     }
+}
+
+// MARK: - Demo (offline review)
+
+/// Canned responses served when `store.demoMode` is on, so every screen is
+/// populated without a desktop or any network. All values are static; the
+/// only computed one is each agent session's `lastUsedAt` (set to "now" so the
+/// list reads as recent).
+private enum Demo {
+    static let terminalId = "demo-term-1"
+
+    static let recentProjects = ["/Users/demo/projects/web", "/Users/demo/projects/api"]
+
+    static let readme = """
+    # Demo Project
+
+    This is sample content shown in Clauge demo mode.
+
+    - Browse files
+    - Open a terminal
+    - View system metrics
+
+    """
+
+    static let notes = "Sample notes shown in Clauge demo mode.\n"
+
+    static var downloadBytes: Data { Data(readme.utf8) }
+
+    static func make<T: Decodable>(_ json: String) -> T {
+        try! JSONDecoder().decode(T.self, from: Data(json.utf8))
+    }
+
+    static let agentSessions: [AgentSessionDto] = {
+        let now = ISO8601DateFormatter().string(from: Date())
+        return make("""
+        [
+          {"id":"demo-agent-1","title":"feature/auth-refactor","provider":"claude","status":"running","projectPath":"/Users/demo/projects/web","purpose":"feature","awaitingInput":false,"lastUsedAt":"\(now)"},
+          {"id":"demo-agent-2","title":"bugfix/payment-retry","provider":"codex","status":"idle","projectPath":"/Users/demo/projects/api","purpose":"bugfix","awaitingInput":false,"lastUsedAt":"\(now)"}
+        ]
+        """)
+    }()
+
+    static let sshProfiles: [SshProfileDto] = make("""
+    [
+      {"id":"demo-ssh-1","name":"prod-web","host":"10.0.0.12","username":"deploy","port":22,"connected":false,"live":false,"liveTerminals":[]},
+      {"id":"demo-ssh-2","name":"raspberry-pi","host":"pi.local","username":"pi","port":22,"connected":false,"live":false,"liveTerminals":[]}
+    ]
+    """)
+
+    static let sysMetrics: SysMetricsDto = make("""
+    {
+      "serverName":"Demo Desktop","platform":"macos","uptimeSecs":184523,
+      "cpu":{"usagePct":23.5,"brand":"Apple M3","cores":8},
+      "memory":{"totalBytes":17179869184,"usedBytes":9512345600,"availableBytes":7667523584},
+      "battery":{"percent":82,"charging":true},
+      "volumes":[{"name":"Macintosh HD","mountPoint":"/","totalBytes":994662584320,"usedBytes":612000000000,"availableBytes":382662584320}]
+    }
+    """)
+
+    static let ports: PortsDto = make("""
+    {"ports":[
+      {"port":3000,"bindAddr":"127.0.0.1","pid":4821,"process":"node"},
+      {"port":5432,"bindAddr":"127.0.0.1","pid":991,"process":"postgres"}
+    ]}
+    """)
+
+    static let fsSearch: FsSearchDto = make("{\"entries\":[]}")
+
+    /// Current-folder file tree rooted at `/Users/demo`.
+    static func fsList(_ path: String?) -> FsListDto {
+        switch path {
+        case .none, .some("/Users/demo"):
+            return make("""
+            {"path":"/Users/demo","parent":null,"entries":[
+              {"name":"projects","path":"/Users/demo/projects","isDir":true,"size":0},
+              {"name":"Documents","path":"/Users/demo/Documents","isDir":true,"size":0},
+              {"name":"README.md","path":"/Users/demo/README.md","isDir":false,"size":1240},
+              {"name":"notes.txt","path":"/Users/demo/notes.txt","isDir":false,"size":420}
+            ]}
+            """)
+        case .some("/Users/demo/projects"):
+            return make("""
+            {"path":"/Users/demo/projects","parent":"/Users/demo","entries":[
+              {"name":"web","path":"/Users/demo/projects/web","isDir":true,"size":0},
+              {"name":"api","path":"/Users/demo/projects/api","isDir":true,"size":0}
+            ]}
+            """)
+        case .some(let p):
+            let parent = (p as NSString).deletingLastPathComponent
+            let obj: [String: Any] = ["path": p, "parent": parent.isEmpty ? "/Users/demo" : parent, "entries": []]
+            let data = try! JSONSerialization.data(withJSONObject: obj)
+            return try! JSONDecoder().decode(FsListDto.self, from: data)
+        }
+    }
+
+    static func fsRead(_ path: String) -> FsReadDto {
+        let text = path.hasSuffix("notes.txt") ? notes
+            : (path.hasSuffix(".md") || path.hasSuffix("README.md") ? readme : "Sample file content shown in Clauge demo mode.\n")
+        let obj: [String: Any] = ["path": path, "binary": false, "tooLarge": false,
+                                  "content": text, "size": text.utf8.count]
+        let data = try! JSONSerialization.data(withJSONObject: obj)
+        return try! JSONDecoder().decode(FsReadDto.self, from: data)
+    }
+
+    /// A self-contained page (no network) for the in-app browser when a demo
+    /// port is opened.
+    static func proxyBase(port: Int) -> URL? {
+        let html = """
+        <html><head><meta name='viewport' content='width=device-width,initial-scale=1'></head>
+        <body style='font-family:-apple-system,sans-serif;background:#060414;color:#e8e8ee;margin:0;padding:28px'>
+        <h2 style='color:#ff5fa2'>Demo dev server</h2>
+        <p>This page is served locally in Clauge demo mode — no network is used.</p>
+        <p>Pretend this is your app running on <code>localhost:\(port)</code>.</p>
+        </body></html>
+        """
+        let encoded = html.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        return URL(string: "data:text/html,\(encoded)")
+    }
+
+    static let serverInfo: ServerInfoDto = make("{\"serverName\":\"Demo Desktop\",\"version\":\"demo\"}")
 }
