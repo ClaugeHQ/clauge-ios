@@ -629,6 +629,9 @@
 				PRODUCT_BUNDLE_IDENTIFIER = in.clauge.app;
 				PRODUCT_NAME = Clauge;
 				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
@@ -653,6 +656,9 @@
 				PRODUCT_BUNDLE_IDENTIFIER = in.clauge.app;
 				PRODUCT_NAME = Clauge;
 				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;

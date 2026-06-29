@@ -89,9 +89,11 @@ struct TerminalView: View {
     }
 
     private func newTerminal() {
-        vm.detach()
         Task {
+            // Only drop the current terminal's socket once the new one is up; a
+            // failed spawn must leave the user on the working terminal.
             if let id = await terminals.spawn() {
+                vm.detach()
                 replaceTop(with: id)
             }
         }

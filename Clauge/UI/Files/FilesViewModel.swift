@@ -19,6 +19,10 @@ final class FilesViewModel: ObservableObject {
     /// stale response can't overwrite the state of a newer navigation.
     private var loadTask: Task<Void, Never>?
 
+    /// The in-flight file read. Cancelled before a new open (file or folder) so a
+    /// slow `fsRead` can't replace the screen with stale content.
+    private var openFileTask: Task<Void, Never>?
+
     init() {
         open(nil) // home directory
     }
@@ -46,6 +50,7 @@ final class FilesViewModel: ObservableObject {
 
     func open(_ path: String?) {
         loadTask?.cancel()
+        openFileTask?.cancel()
         loading = true
         error = nil
         searching = false
@@ -77,17 +82,22 @@ final class FilesViewModel: ObservableObject {
     }
 
     func openFile(_ entry: FsEntryDto) {
-        Task { [weak self] in
+        loadTask?.cancel()
+        openFileTask?.cancel()
+        loading = true
+        error = nil
+        openFileTask = Task { [weak self] in
             guard let self else { return }
-            self.loading = true
-            self.error = nil
             do {
                 let read = try await self.client.fsRead(path: entry.path)
+                try Task.checkCancellation()
                 self.loading = false
                 self.opened = read
                 self.openedName = entry.name
             } catch is CancellationError {
+                // Superseded by a newer open — leave state to the winner.
             } catch {
+                if Task.isCancelled { return }
                 self.loading = false
                 self.error = Self.message(error, fallback: "Couldn't open file")
             }

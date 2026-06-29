@@ -14,6 +14,9 @@ final class SysMonViewModel: ObservableObject {
     private var refreshTask: Task<Void, Never>?
 
     private let historyLimit = 40
+    private let loadTimeout: Duration = .seconds(10)
+
+    private struct TimeoutError: Error {}
 
     func start() {
         refresh()
@@ -45,7 +48,9 @@ final class SysMonViewModel: ObservableObject {
     private func load() async {
         if metrics == nil { loading = true }
         do {
-            let m = try await client.sysMetrics()
+            // Bound the request so one slow desktop can't wedge the poll/retry
+            // path indefinitely; the next refresh runs once this returns.
+            let m = try await withTimeout { try await self.client.sysMetrics() }
             let memPct = m.memory.totalBytes > 0
                 ? Double(m.memory.usedBytes) / Double(m.memory.totalBytes) * 100
                 : 0
@@ -56,12 +61,28 @@ final class SysMonViewModel: ObservableObject {
             memHistory = Array((memHistory + [memPct]).suffix(historyLimit))
         } catch is CancellationError {
             // View teardown / poll stop — not a real failure.
+        } catch is TimeoutError {
+            if Task.isCancelled { return }
+            loading = false
+            self.error = "Metrics request timed out"
         } catch {
             if Task.isCancelled { return }
             loading = false
             // Surface the error even once metrics have loaded so a stalled
             // desktop is visible behind the last good snapshot.
             self.error = error.localizedDescription
+        }
+    }
+
+    private func withTimeout(_ operation: @escaping () async throws -> SysMetricsDto) async throws -> SysMetricsDto {
+        try await withThrowingTaskGroup(of: SysMetricsDto.self) { group in
+            group.addTask { try await operation() }
+            group.addTask { [loadTimeout] in
+                try await Task.sleep(for: loadTimeout)
+                throw TimeoutError()
+            }
+            defer { group.cancelAll() }
+            return try await group.next()!
         }
     }
 }

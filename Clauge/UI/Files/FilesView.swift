@@ -55,6 +55,15 @@ struct FilesView: View {
         } message: { entry in
             Text(entry.isDir ? "This removes the folder and its contents." : "This permanently deletes the file.")
         }
+        .alert(
+            "Something went wrong",
+            isPresented: Binding(get: { vm.error != nil }, set: { if !$0 { vm.error = nil } }),
+            presenting: vm.error
+        ) { _ in
+            Button("OK", role: .cancel) {}
+        } message: { msg in
+            Text(msg)
+        }
     }
 
     @ViewBuilder
@@ -185,27 +194,43 @@ struct FilesView: View {
     /// On any fetch or write failure surface an error instead of claiming success.
     private func shareEntry(_ entry: FsEntryDto) {
         Task {
+            // A companion-supplied name can contain path traversal; reduce to a
+            // basename and confirm the temp URL stays inside the share dir.
+            let safeName = (entry.name as NSString).lastPathComponent
+            guard !safeName.isEmpty, safeName != ".", safeName != ".." else {
+                vm.error = "Can't share a file with that name"
+                return
+            }
             guard let data = await vm.download(entry.path) else { return }
             let dir = FileManager.default.temporaryDirectory.appendingPathComponent("clauge-share", isDirectory: true)
-            let url = dir.appendingPathComponent(entry.name)
+            let url = dir.appendingPathComponent(safeName)
+            let base = dir.standardizedFileURL.path
+            guard url.standardizedFileURL.path.hasPrefix(base + "/") else {
+                vm.error = "Couldn't prepare \(safeName) for sharing"
+                return
+            }
             do {
                 try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
                 try data.write(to: url, options: .atomic)
                 shareItem = ShareItem(url: url)
             } catch {
-                vm.error = "Couldn't prepare \(entry.name) for sharing"
+                vm.error = "Couldn't prepare \(safeName) for sharing"
             }
         }
     }
 
     private func importFile(_ url: URL) {
-        let scoped = url.startAccessingSecurityScopedResource()
-        defer { if scoped { url.stopAccessingSecurityScopedResource() } }
-        do {
-            let data = try Data(contentsOf: url)
-            vm.upload(name: url.lastPathComponent, data: data)
-        } catch {
-            vm.error = "Couldn't read the selected file"
+        Task { @MainActor in
+            let scoped = url.startAccessingSecurityScopedResource()
+            defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+            do {
+                // Read the bytes off the main actor so a large selection doesn't
+                // freeze the picker return path.
+                let data = try await Task.detached { try Data(contentsOf: url) }.value
+                vm.upload(name: url.lastPathComponent, data: data)
+            } catch {
+                vm.error = "Couldn't read the selected file"
+            }
         }
     }
 }

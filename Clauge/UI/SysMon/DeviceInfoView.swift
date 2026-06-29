@@ -219,10 +219,10 @@ private struct Sparkline: View {
                 guard values.count >= 2 else { return }
                 let w = geo.size.width
                 let h = geo.size.height
-                let stepX = w / Double(values.count - 1)
+                let stepX = w / CGFloat(values.count - 1)
                 for (i, v) in values.enumerated() {
-                    let clamped = min(max(v, 0), 100)
-                    let x = stepX * Double(i)
+                    let clamped = min(max(CGFloat(v), 0), 100)
+                    let x = stepX * CGFloat(i)
                     let y = h * (1 - clamped / 100)
                     let point = CGPoint(x: x, y: y)
                     if i == 0 { path.move(to: point) } else { path.addLine(to: point) }

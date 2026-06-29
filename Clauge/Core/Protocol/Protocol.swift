@@ -188,7 +188,7 @@ struct FsEntryDto: Codable, Identifiable, Equatable {
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         name = try c.decodeIfPresent(String.self, forKey: .name) ?? ""
-        path = try c.decodeIfPresent(String.self, forKey: .path) ?? ""
+        path = try c.decode(String.self, forKey: .path)
         isDir = try c.decodeIfPresent(Bool.self, forKey: .isDir) ?? false
         size = try c.decodeIfPresent(Int.self, forKey: .size) ?? 0
     }
@@ -255,8 +255,8 @@ struct PortInfoDto: Codable, Identifiable, Equatable {
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
-        port = try c.decodeIfPresent(Int.self, forKey: .port) ?? 0
-        bindAddr = try c.decodeIfPresent(String.self, forKey: .bindAddr) ?? ""
+        port = try c.decode(Int.self, forKey: .port)
+        bindAddr = try c.decode(String.self, forKey: .bindAddr)
         pid = try c.decodeIfPresent(Int.self, forKey: .pid)
         process = try c.decodeIfPresent(String.self, forKey: .process)
     }

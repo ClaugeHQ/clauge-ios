@@ -24,11 +24,43 @@ final class ProxySchemeHandler: NSObject, WKURLSchemeHandler {
     private let session = URLSession(configuration: .ephemeral)
     private var tasks: [ObjectIdentifier: URLSessionDataTask] = [:]
 
-    init(token: String?) { self.token = token }
+    /// The only desktop endpoint requests may reach. The bearer token and
+    /// wildcard CORS are attached solely to in-scope requests; anything else
+    /// (a crafted `claugeproxy://other-host/…` from page content) is rejected.
+    private let allowedHost: String?
+    private let allowedPort: Int?
+    private let allowedPathPrefix: String?
+
+    init(token: String?, allowedOrigin: String?) {
+        self.token = token
+        if let s = allowedOrigin, let c = URLComponents(string: s) {
+            allowedHost = c.host
+            allowedPort = c.port
+            let parts = c.path.split(separator: "/", omittingEmptySubsequences: true)
+            if parts.count >= 3, parts[0] == "v1", parts[1] == "proxy" {
+                allowedPathPrefix = "/v1/proxy/\(parts[2])/"
+            } else {
+                allowedPathPrefix = nil
+            }
+        } else {
+            allowedHost = nil
+            allowedPort = nil
+            allowedPathPrefix = nil
+        }
+    }
+
+    private func isInScope(_ url: URL) -> Bool {
+        guard let host = allowedHost, let prefix = allowedPathPrefix,
+              let c = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return false }
+        guard c.scheme == "http" || c.scheme == "https" else { return false }
+        guard c.host == host, c.port == allowedPort else { return false }
+        return c.path.hasPrefix(prefix)
+    }
 
     func webView(_ webView: WKWebView, start urlSchemeTask: WKURLSchemeTask) {
         guard let original = urlSchemeTask.request.url,
-              let upstream = Self.upstreamURL(from: original) else {
+              let upstream = Self.upstreamURL(from: original),
+              isInScope(upstream) else {
             urlSchemeTask.didFailWithError(URLError(.badURL))
             return
         }
@@ -128,7 +160,7 @@ struct BrowserWebView: UIViewRepresentable {
         config.allowsInlineMediaPlayback = true
 
         if isProxy {
-            let handler = ProxySchemeHandler(token: token)
+            let handler = ProxySchemeHandler(token: token, allowedOrigin: url)
             config.setURLSchemeHandler(handler, forURLScheme: ProxySchemeHandler.httpScheme)
             config.setURLSchemeHandler(handler, forURLScheme: ProxySchemeHandler.httpsScheme)
             context.coordinator.schemeHandler = handler
@@ -163,8 +195,11 @@ struct BrowserWebView: UIViewRepresentable {
         guard isProxy else { return }
         if context.coordinator.lastConsoleOpen != consoleOpen {
             context.coordinator.lastConsoleOpen = consoleOpen
+            #if DEBUG
+            // eruda pulls a remote CDN script; keep it out of release builds.
             let js = consoleOpen ? Self.erudaShowJS : Self.erudaHideJS
             webView.evaluateJavaScript(js, completionHandler: nil)
+            #endif
         }
     }
 
@@ -194,9 +229,11 @@ struct BrowserWebView: UIViewRepresentable {
         #endif
     }
 
-    // #8: eruda console is injected only on proxied pages.
+    #if DEBUG
+    // eruda console is injected only on proxied pages, debug builds only.
     private static let erudaShowJS = "(function(){if(window.eruda){eruda.show();return;}var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/eruda';s.onload=function(){eruda.init();eruda.show();};document.head.appendChild(s);})();"
     private static let erudaHideJS = "if(window.eruda)eruda.hide();"
+    #endif
     private static let consoleCaptureJS = """
     (function(){var levels=['log','warn','error','info'];levels.forEach(function(l){var orig=console[l];console[l]=function(){try{window.webkit.messageHandlers.claugeLog.postMessage(l+': '+Array.prototype.join.call(arguments,' '));}catch(e){}orig.apply(console,arguments);};});})();
     """

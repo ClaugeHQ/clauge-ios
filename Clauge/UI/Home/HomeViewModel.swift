@@ -120,6 +120,15 @@ final class HomeViewModel: ObservableObject {
     private func startSpawn(title: String,
                             onReady: @escaping (String) -> Void,
                             spawn: @escaping (String) async throws -> String) {
+        // A fast second open must not orphan the first: cancel the previous
+        // spawn and tell the desktop to drop its requestId so a stale handshake
+        // can't still route via onReady.
+        let previousTask = spawnTask
+        let previousId = spawnRequestId
+        previousTask?.cancel()
+        if let previousId {
+            Task { [client] in try? await client.cancelOpen(requestId: previousId) }
+        }
         let requestId = UUID().uuidString
         spawningTitle = title
         spawnRequestId = requestId

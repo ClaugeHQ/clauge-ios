@@ -45,12 +45,20 @@ struct RootView: View {
 
     private func routeDeepLinkIfPossible() {
         guard store.isPaired, let link = push.pendingDeepLink else { return }
-        if let name = link.serverName, let id = store.deviceId(byName: name), id != store.activeDeviceId {
-            // The push named a different paired device. Activate it and drop the
-            // previous device's cockpit so backing out of the terminal doesn't
-            // land on a stale screen scoped to the old device.
-            store.setActive(id)
-            router.reset()
+        if let name = link.serverName {
+            guard let id = store.deviceId(byName: name) else {
+                // The push named a device we can't resolve. Consume the link
+                // without routing rather than opening against the wrong desktop.
+                _ = push.consume()
+                return
+            }
+            if id != store.activeDeviceId {
+                // The push named a different paired device. Activate it and drop
+                // the previous device's cockpit so backing out of the terminal
+                // doesn't land on a stale screen scoped to the old device.
+                store.setActive(id)
+                router.reset()
+            }
         }
         router.openTerminal(link.terminalId)
         _ = push.consume()

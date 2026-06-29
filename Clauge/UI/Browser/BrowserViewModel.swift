@@ -79,23 +79,32 @@ final class BrowserViewModel: ObservableObject {
     func submit(_ input: String) {
         let t = input.trimmingCharacters(in: .whitespacesAndNewlines)
         if t.isEmpty { return }
-        if let port = Self.parsePort(t) {
-            openPort(port)
+        if let local = Self.parseLocalhost(t) {
+            openPort(local.port, suffix: local.suffix)
         } else {
             openWeb(Self.normalizeUrl(t))
         }
     }
 
-    func openPort(_ port: Int) {
+    func openPort(_ port: Int, suffix: String = "") {
         Task { [weak self] in
             guard let self else { return }
             if let base = await self.client.proxyBase(port: port) {
-                self.view = .web(url: base.absoluteString, isProxy: true)
-                self.title = "localhost:\(port)"
+                // proxyBase ends in `/`; append the localhost path/query through
+                // the proxy rather than loading it directly on the phone.
+                var full = base.absoluteString
+                if suffix.hasPrefix("/") {
+                    full += String(suffix.dropFirst())
+                } else {
+                    full += suffix
+                }
+                let label = "localhost:\(port)\(suffix)"
+                self.view = .web(url: full, isProxy: true)
+                self.title = label
                 self.consoleOpen = false
                 self.canGoBack = false
                 self.canGoForward = false
-                self.addRecent(url: "localhost:\(port)", title: "localhost:\(port)")
+                self.addRecent(url: label, title: label)
             } else {
                 self.portsError = "Desktop unreachable"
             }
@@ -140,15 +149,29 @@ final class BrowserViewModel: ObservableObject {
         await client.authToken()
     }
 
-    static func parsePort(_ input: String) -> Int? {
+    /// A localhost target — port plus any trailing path/query to forward through
+    /// the proxy (e.g. `localhost:3000/foo?x=1`).
+    struct LocalTarget: Equatable {
+        let port: Int
+        let suffix: String
+    }
+
+    /// Detects a localhost dev URL (bare port, `localhost:port`, `127.0.0.1:port`,
+    /// with or without an `http(s)://` scheme and a `/path?query`). The host is
+    /// pinned to localhost/127.0.0.1 so real hostnames fall through to `openWeb`.
+    static func parseLocalhost(_ input: String) -> LocalTarget? {
         let t = input.trimmingCharacters(in: .whitespaces)
-        if t.contains(".") && !t.contains("127.0.0.1") { return nil }
-        let pattern = "^(?:https?://)?(?:localhost|127\\.0\\.0\\.1)?:?(\\d{2,5})/?$"
+        let pattern = "^(?:https?://)?(?:localhost|127\\.0\\.0\\.1)?:?(\\d{2,5})((?:/|\\?)[^\\s]*)?$"
         guard let re = try? NSRegularExpression(pattern: pattern) else { return nil }
         let range = NSRange(t.startIndex..., in: t)
         guard let m = re.firstMatch(in: t, range: range), m.range == range else { return nil }
         guard let g = Range(m.range(at: 1), in: t), let port = Int(t[g]) else { return nil }
-        return (1...65535).contains(port) ? port : nil
+        guard (1...65535).contains(port) else { return nil }
+        var suffix = ""
+        if m.range(at: 2).location != NSNotFound, let s = Range(m.range(at: 2), in: t) {
+            suffix = String(t[s])
+        }
+        return LocalTarget(port: port, suffix: suffix)
     }
 
     static func normalizeUrl(_ input: String) -> String {
