@@ -2,7 +2,6 @@ import SwiftUI
 
 struct HomeView: View {
     @EnvironmentObject private var store: ServerStore
-    @EnvironmentObject private var router: Router
     @StateObject private var vm = HomeViewModel()
 
     private var serverName: String { store.activeDevice?.name ?? "Clauge desktop" }
@@ -26,11 +25,8 @@ struct HomeView: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
 
-                content
+                HomeContent(vm: vm, section: vm.tab)
             }
-
-            if let title = vm.spawningTitle { spawnOverlay(title) }
-            if let toast = vm.toast { toastView(toast) }
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(Theme.background, for: .navigationBar)
@@ -45,6 +41,26 @@ struct HomeView: View {
         .onAppear { vm.start() }
         .onDisappear { vm.stop() }
     }
+}
+
+/// The Agent or SSH session list for the active device, without app chrome —
+/// the host (Home screen or Cockpit) owns the header and navigation. A pure
+/// body so it can be dropped into any cockpit tab.
+struct HomeContent: View {
+    @ObservedObject var vm: HomeViewModel
+    @EnvironmentObject private var store: ServerStore
+    @EnvironmentObject private var router: Router
+    let section: HomeViewModel.Tab
+
+    private var serverName: String { store.activeDevice?.name ?? "Clauge desktop" }
+
+    var body: some View {
+        ZStack {
+            content
+            if let title = vm.spawningTitle { spawnOverlay(title) }
+            if let toast = vm.toast { toastView(toast) }
+        }
+    }
 
     @ViewBuilder
     private var content: some View {
@@ -53,7 +69,7 @@ struct HomeView: View {
                 title: "Can't reach \(serverName)",
                 detail: "Make sure Clauge desktop is running on the same network."
             )
-        } else if vm.tab == .agent {
+        } else if section == .agent {
             agentList
         } else {
             sshList
@@ -68,22 +84,30 @@ struct HomeView: View {
             emptyState(title: "No active sessions on this device",
                        detail: "Start one on your desktop — it'll show up here.")
         } else {
-            List {
-                ForEach(vm.agentGroups) { group in
-                    Section {
-                        ForEach(group.sessions) { session in
-                            AgentRow(session: session)
-                                .listRowBackground(Theme.surface)
-                                .contentShape(Rectangle())
-                                .onTapGesture { openAgent(session) }
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 16) {
+                    ForEach(vm.agentGroups) { group in
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(group.label)
+                                .font(.caption)
+                                .foregroundStyle(Theme.textSecondary)
+                                .padding(.horizontal, 4)
+                            VStack(spacing: 10) {
+                                ForEach(group.sessions) { session in
+                                    AgentRow(session: session)
+                                        .padding(.horizontal, 16)
+                                        .padding(.vertical, 12)
+                                        .background(Theme.surface, in: RoundedRectangle(cornerRadius: 16))
+                                        .contentShape(Rectangle())
+                                        .onTapGesture { openAgent(session) }
+                                }
+                            }
                         }
-                    } header: {
-                        Text(group.label).foregroundStyle(Theme.textSecondary)
                     }
                 }
+                .padding(.horizontal, 16)
+                .padding(.top, 12)
             }
-            .listStyle(.insetGrouped)
-            .scrollContentBackground(.hidden)
             .refreshable { await vm.refresh() }
         }
     }
@@ -96,16 +120,20 @@ struct HomeView: View {
             emptyState(title: "No SSH profiles on this device",
                        detail: "Add one on your desktop to connect from here.")
         } else {
-            List {
-                ForEach(vm.ssh) { profile in
-                    SshRow(profile: profile)
-                        .listRowBackground(Theme.surface)
-                        .contentShape(Rectangle())
-                        .onTapGesture { openSsh(profile) }
+            ScrollView {
+                LazyVStack(spacing: 10) {
+                    ForEach(vm.ssh) { profile in
+                        SshRow(profile: profile)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 14)
+                            .background(Theme.surface, in: RoundedRectangle(cornerRadius: 16))
+                            .contentShape(Rectangle())
+                            .onTapGesture { openSsh(profile) }
+                    }
                 }
+                .padding(.horizontal, 16)
+                .padding(.top, 12)
             }
-            .listStyle(.insetGrouped)
-            .scrollContentBackground(.hidden)
             .refreshable { await vm.refresh() }
         }
     }
@@ -113,11 +141,11 @@ struct HomeView: View {
     // MARK: Actions
 
     private func openAgent(_ session: AgentSessionDto) {
-        Task { if let id = await vm.openAgent(session) { router.push(.terminal(id)) } }
+        vm.openAgent(session) { id in router.push(.terminal(id)) }
     }
 
     private func openSsh(_ profile: SshProfileDto) {
-        Task { if let id = await vm.openSsh(profile) { router.push(.terminal(id)) } }
+        vm.openSsh(profile) { id in router.push(.terminal(id)) }
     }
 
     // MARK: Pieces
@@ -140,6 +168,12 @@ struct HomeView: View {
             VStack(spacing: 14) {
                 ProgressView().tint(Theme.pink)
                 Text("Starting \(title)…").foregroundStyle(Theme.textPrimary)
+                Text("Make sure the desktop app is open")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.textSecondary)
+                Button("Cancel") { vm.cancelSpawn() }
+                    .foregroundStyle(Theme.pink)
+                    .padding(.top, 6)
             }
         }
     }

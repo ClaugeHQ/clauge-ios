@@ -7,6 +7,9 @@ import SwiftUI
 final class Router: ObservableObject {
     enum Route: Hashable {
         case home
+        case cockpit
+        case deviceInfo
+        case browser
         case terminal(String)
         case settings
     }
@@ -15,5 +18,8 @@ final class Router: ObservableObject {
 
     func reset() { path = [] }
     func push(_ route: Route) { path.append(route) }
-    func openTerminal(_ terminalId: String) { path = [.home, .terminal(terminalId)] }
+    func openCockpit() { push(.cockpit) }
+    func openDeviceInfo() { push(.deviceInfo) }
+    func openBrowser() { push(.browser) }
+    func openTerminal(_ terminalId: String) { path = [.cockpit, .terminal(terminalId)] }
 }

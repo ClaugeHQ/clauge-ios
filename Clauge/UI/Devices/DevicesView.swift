@@ -68,7 +68,9 @@ struct DevicesView: View {
         } else {
             List {
                 ForEach(store.devices) { device in
-                    DeviceRow(device: device, status: vm.online[device.id])
+                    DeviceRow(device: device,
+                              status: vm.online[device.id],
+                              onDetails: { openDetails(device) })
                         .listRowBackground(Theme.surface)
                         .contentShape(Rectangle())
                         .onTapGesture { tap(device) }
@@ -98,11 +100,17 @@ struct DevicesView: View {
 
     private func tap(_ device: Device) {
         store.setActive(device.id)
+        // Online → open the cockpit. Offline → re-probe in place; never dead-end.
         if vm.online[device.id] == false {
             Task { await vm.refresh() }
         } else {
-            router.push(.home)
+            router.push(.cockpit)
         }
+    }
+
+    private func openDetails(_ device: Device) {
+        store.setActive(device.id)
+        router.push(.deviceInfo)
     }
 
     private func startPairing() {
@@ -140,6 +148,9 @@ private struct EmptyDevices: View {
 private struct DeviceRow: View {
     let device: Device
     let status: Bool?
+    let onDetails: () -> Void
+
+    private var online: Bool { status == true }
 
     private var dotColor: Color {
         switch status {
@@ -149,18 +160,40 @@ private struct DeviceRow: View {
         }
     }
 
+    private var statusLabel: String {
+        switch status {
+        case .some(true): return "Online"
+        case .some(false): return "Offline"
+        case .none: return "Checking…"
+        }
+    }
+
     var body: some View {
         HStack(spacing: 12) {
-            StatusDot(color: dotColor, diameter: 10)
+            StatusDot(color: dotColor, diameter: 9)
             VStack(alignment: .leading, spacing: 2) {
-                Text(device.name).font(.headline).foregroundStyle(Theme.textPrimary)
-                Text("Port \(device.port) · \(device.hosts.count) address\(device.hosts.count == 1 ? "" : "es")")
+                Text(device.name)
+                    .font(.headline)
+                    .foregroundStyle(Theme.textPrimary)
+                    .lineLimit(1)
+                Text("\(statusLabel) · Port \(device.port)")
                     .font(.caption)
                     .foregroundStyle(Theme.textSecondary)
+                    .lineLimit(1)
             }
             Spacer()
-            Image(systemName: "chevron.right").font(.caption).foregroundStyle(Theme.textSecondary)
+            // Metrics are only meaningful for a reachable device.
+            Button(action: onDetails) {
+                Image(systemName: "chart.bar.xaxis")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(Theme.textSecondary)
+                    .frame(width: 36, height: 36)
+            }
+            .buttonStyle(.plain)
+            .disabled(!online)
+            .opacity(online ? 1 : 0.4)
         }
         .padding(.vertical, 6)
+        .opacity(online ? 1 : 0.55)
     }
 }

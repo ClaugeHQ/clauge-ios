@@ -75,10 +75,20 @@ final class CompanionClient {
     // MARK: - Request core
 
     private func authedRequest(_ path: String, method: String) async throws -> URLRequest {
+        try await authedRequest(path, method: method, query: [])
+    }
+
+    private func authedRequest(_ path: String, method: String, query: [URLQueryItem]) async throws -> URLRequest {
         guard let device = await store.activeDevice else { throw NetError.notPaired }
         guard let token = await store.activeToken else { throw NetError.notPaired }
         let host = await reachableHost(device)
-        var req = URLRequest(url: url(host: host, port: device.port, path: path))
+        var c = URLComponents()
+        c.scheme = "http"
+        c.host = host
+        c.port = device.port
+        c.path = path
+        if !query.isEmpty { c.queryItems = query }
+        var req = URLRequest(url: c.url!)
         req.httpMethod = method
         req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         return req
@@ -163,21 +173,118 @@ final class CompanionClient {
         try decode(try await run(authedRequest("/v1/sessions/ssh", method: "GET")))
     }
 
-    func spawnAgent(sessionId: String) async throws -> String {
+    func spawnAgent(sessionId: String, requestId: String? = nil) async throws -> String {
         var req = try await authedRequest("/v1/sessions/agent", method: "POST")
         req.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
-        req.httpBody = try JSONEncoder().encode(SpawnAgentRequest(sessionId: sessionId, newSession: nil))
+        req.httpBody = try JSONEncoder().encode(SpawnAgentRequest(sessionId: sessionId, newSession: nil, requestId: requestId))
         let out: SpawnResponse = try decode(try await run(req))
         return out.terminalId
     }
 
-    func spawnSsh(profileId: String) async throws -> String {
+    func spawnSsh(profileId: String, requestId: String? = nil) async throws -> String {
         var req = try await authedRequest("/v1/sessions/ssh", method: "POST")
         req.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
-        req.httpBody = try JSONEncoder().encode(SpawnSshRequest(profileId: profileId))
+        req.httpBody = try JSONEncoder().encode(SpawnSshRequest(profileId: profileId, requestId: requestId))
         let out: SpawnResponse = try decode(try await run(req))
         return out.terminalId
     }
+
+    func spawnShell(cwd: String? = nil) async throws -> String {
+        var req = try await authedRequest("/v1/sessions/shell", method: "POST")
+        req.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
+        if let cwd = cwd, !cwd.isEmpty {
+            req.httpBody = try JSONSerialization.data(withJSONObject: ["cwd": cwd])
+        } else {
+            req.httpBody = Data("{}".utf8)
+        }
+        let out: SpawnResponse = try decode(try await run(req))
+        return out.terminalId
+    }
+
+    /// Abort an in-flight spawn the desktop hasn't finished opening.
+    func cancelOpen(requestId: String) async throws {
+        var req = try await authedRequest("/v1/sessions/cancel", method: "POST")
+        req.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try JSONEncoder().encode(CancelOpenRequest(requestId: requestId))
+        _ = try await run(req)
+    }
+
+    // MARK: - System metrics
+
+    func sysMetrics() async throws -> SysMetricsDto {
+        try decode(try await run(authedRequest("/v1/sys/metrics", method: "GET")))
+    }
+
+    // MARK: - Files
+
+    func fsList(path: String?, hidden: Bool) async throws -> FsListDto {
+        var q = [URLQueryItem(name: "hidden", value: hidden ? "true" : "false")]
+        if let p = path, !p.isEmpty { q.append(URLQueryItem(name: "path", value: p)) }
+        return try decode(try await run(authedRequest("/v1/fs/list", method: "GET", query: q)))
+    }
+
+    func fsRead(path: String) async throws -> FsReadDto {
+        try decode(try await run(authedRequest("/v1/fs/read", method: "GET", query: [URLQueryItem(name: "path", value: path)])))
+    }
+
+    func fsSearch(path: String?, query: String) async throws -> FsSearchDto {
+        var q = [URLQueryItem(name: "q", value: query)]
+        if let p = path, !p.isEmpty { q.append(URLQueryItem(name: "path", value: p)) }
+        return try decode(try await run(authedRequest("/v1/fs/search", method: "GET", query: q)))
+    }
+
+    func fsMkdir(path: String) async throws {
+        var req = try await authedRequest("/v1/fs/mkdir", method: "POST")
+        req.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try JSONEncoder().encode(FsPathBody(path: path))
+        _ = try await run(req)
+    }
+
+    func fsWrite(path: String, content: String) async throws {
+        var req = try await authedRequest("/v1/fs/write", method: "POST")
+        req.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try JSONEncoder().encode(FsWriteBody(path: path, content: content))
+        _ = try await run(req)
+    }
+
+    func fsDelete(path: String) async throws {
+        _ = try await run(authedRequest("/v1/fs/delete", method: "DELETE", query: [URLQueryItem(name: "path", value: path)]))
+    }
+
+    func fsDownload(path: String) async throws -> Data {
+        try await run(authedRequest("/v1/fs/download", method: "GET", query: [URLQueryItem(name: "path", value: path)]))
+    }
+
+    func fsUpload(dir: String, name: String, data: Data) async throws {
+        var req = try await authedRequest("/v1/fs/upload", method: "POST",
+                                         query: [URLQueryItem(name: "path", value: dir),
+                                                 URLQueryItem(name: "name", value: name)])
+        req.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
+        req.httpBody = data
+        _ = try await run(req)
+    }
+
+    // MARK: - Ports + reverse proxy
+
+    func ports() async throws -> PortsDto {
+        try decode(try await run(authedRequest("/v1/ports", method: "GET")))
+    }
+
+    /// Base URL of the desktop's reverse proxy to a localhost dev port.
+    func proxyBase(port: Int) async -> URL? {
+        guard let device = await store.activeDevice else { return nil }
+        let host = await reachableHost(device)
+        if host.isEmpty { return nil }
+        var c = URLComponents()
+        c.scheme = "http"
+        c.host = host
+        c.port = device.port
+        c.path = "/v1/proxy/\(port)/"
+        return c.url
+    }
+
+    /// Bearer token the in-app browser attaches to proxied requests only.
+    func authToken() async -> String? { await store.activeToken }
 
     func endTerminal(_ terminalId: String) async throws {
         _ = try await run(authedRequest("/v1/term/\(terminalId)", method: "DELETE"))
