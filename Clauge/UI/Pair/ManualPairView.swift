@@ -8,9 +8,14 @@ struct ManualPairView: View {
     @State private var code = ""
 
     private var port: Int? { Int(portText).flatMap { (1...65535).contains($0) ? $0 : nil } }
+    private var isDemoCode: Bool {
+        code.trimmingCharacters(in: .whitespaces).uppercased() == "DEMO"
+    }
     private var canSubmit: Bool {
-        !host.trimmingCharacters(in: .whitespaces).isEmpty && port != nil
-            && !code.trimmingCharacters(in: .whitespaces).isEmpty && !vm.isBusy
+        if vm.isBusy { return false }
+        if isDemoCode { return true }
+        return !host.trimmingCharacters(in: .whitespaces).isEmpty && port != nil
+            && !code.trimmingCharacters(in: .whitespaces).isEmpty
     }
 
     var body: some View {
@@ -21,7 +26,7 @@ struct ManualPairView: View {
                     field("NAME", text: $name, placeholder: "Optional", keyboard: .default)
                     field("HOST", text: $host, placeholder: "192.168.1.10", keyboard: .URL)
                     field("PORT", text: $portText, placeholder: "7431", keyboard: .numberPad)
-                    field("CODE", text: $code, placeholder: "6-digit code", keyboard: .numberPad)
+                    field("CODE", text: $code, placeholder: "6-digit code", keyboard: .asciiCapable)
 
                     Button(action: submit) {
                         Text("Pair")
@@ -79,10 +84,15 @@ struct ManualPairView: View {
     }
 
     private func submit() {
-        guard let port else { return }
-        let h = host.trimmingCharacters(in: .whitespaces)
         let c = code.trimmingCharacters(in: .whitespaces)
         let n = name.trimmingCharacters(in: .whitespaces)
+        if isDemoCode {
+            Task { await vm.pair(hosts: [], port: ServerStore.defaultPort, code: c,
+                                 nameOverride: n.isEmpty ? nil : n) }
+            return
+        }
+        guard let port else { return }
+        let h = host.trimmingCharacters(in: .whitespaces)
         Task { await vm.pair(hosts: [h], port: port, code: c, nameOverride: n.isEmpty ? nil : n) }
     }
 }

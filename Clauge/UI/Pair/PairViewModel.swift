@@ -32,6 +32,13 @@ final class PairViewModel: ObservableObject {
     }
 
     func pair(hosts: [String], port: Int, code: String, nameOverride: String? = nil) async {
+        // Offline review demo: the `DEMO` code (manual or QR) short-circuits
+        // before any network call and lands on the device list with a canned
+        // desktop. Any other code pairs for real, unchanged.
+        if code.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() == "DEMO" {
+            store.enterDemoMode()
+            return
+        }
         phase = .waitingApproval
         do {
             let resp = try await client.pair(

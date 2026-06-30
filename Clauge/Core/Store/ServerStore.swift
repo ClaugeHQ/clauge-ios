@@ -15,6 +15,14 @@ final class ServerStore: ObservableObject {
     @Published var notificationsEnabled: Bool { didSet { if loaded { defaults.set(notificationsEnabled, forKey: Key.notificationsEnabled) } } }
     @Published var onboarded: Bool { didSet { if loaded { defaults.set(onboarded, forKey: Key.onboarded) } } }
 
+    static let demoDeviceId = "demo-device"
+
+    /// Offline review demo. On only while the demo device is active: the
+    /// companion client returns canned data for every endpoint and the terminal
+    /// plays a scripted transcript — no network is ever touched. Activating any
+    /// real device turns it off automatically. Entered via the `DEMO` code/QR.
+    var demoMode: Bool { activeDeviceId == Self.demoDeviceId }
+
     private let defaults = UserDefaults.standard
     private var loaded = false
 
@@ -36,6 +44,23 @@ final class ServerStore: ObservableObject {
         notificationsEnabled = defaults.object(forKey: Key.notificationsEnabled) as? Bool ?? true
         onboarded = defaults.bool(forKey: Key.onboarded)
         loaded = true
+    }
+
+    // MARK: Demo
+
+    /// Enter offline review demo: register a fake paired desktop locally (no
+    /// network), stash a dummy token so authed paths don't bail, and make it
+    /// active. `isPaired` then flips → the paired stack appears, and `demoMode`
+    /// reads true for as long as this device stays active.
+    func enterDemoMode() {
+        let id = Self.demoDeviceId
+        if !devices.contains(where: { $0.id == id }) {
+            devices.append(Device(id: id, name: "Demo Desktop", hosts: ["demo"], port: 7431,
+                                  addedAt: Date().timeIntervalSince1970))
+        }
+        Keychain.set("demo-token", for: "deviceToken:\(id)")
+        persistDevices()
+        setActive(id)
     }
 
     // MARK: Derived
