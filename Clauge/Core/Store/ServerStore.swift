@@ -15,12 +15,13 @@ final class ServerStore: ObservableObject {
     @Published var notificationsEnabled: Bool { didSet { if loaded { defaults.set(notificationsEnabled, forKey: Key.notificationsEnabled) } } }
     @Published var onboarded: Bool { didSet { if loaded { defaults.set(onboarded, forKey: Key.onboarded) } } }
 
-    /// Offline review demo. When on, the companion client returns canned data
-    /// for every endpoint and the terminal plays a scripted transcript — no
-    /// network is ever touched. Entered only via the `DEMO` pairing code/QR.
-    @Published private(set) var demoMode: Bool { didSet { if loaded { defaults.set(demoMode, forKey: Key.demoMode) } } }
-
     static let demoDeviceId = "demo-device"
+
+    /// Offline review demo. On only while the demo device is active: the
+    /// companion client returns canned data for every endpoint and the terminal
+    /// plays a scripted transcript — no network is ever touched. Activating any
+    /// real device turns it off automatically. Entered via the `DEMO` code/QR.
+    var demoMode: Bool { activeDeviceId == Self.demoDeviceId }
 
     private let defaults = UserDefaults.standard
     private var loaded = false
@@ -31,7 +32,6 @@ final class ServerStore: ObservableObject {
         static let deviceName = "deviceName"
         static let notificationsEnabled = "notificationsEnabled"
         static let onboarded = "onboarded"
-        static let demoMode = "demoMode"
     }
 
     init() {
@@ -43,15 +43,15 @@ final class ServerStore: ObservableObject {
         deviceName = defaults.string(forKey: Key.deviceName) ?? UIDevice.current.name
         notificationsEnabled = defaults.object(forKey: Key.notificationsEnabled) as? Bool ?? true
         onboarded = defaults.bool(forKey: Key.onboarded)
-        demoMode = defaults.bool(forKey: Key.demoMode)
         loaded = true
     }
 
     // MARK: Demo
 
     /// Enter offline review demo: register a fake paired desktop locally (no
-    /// network), stash a dummy token so authed paths don't bail, and flip the
-    /// persisted flag. `isPaired` then flips → the paired stack appears.
+    /// network), stash a dummy token so authed paths don't bail, and make it
+    /// active. `isPaired` then flips → the paired stack appears, and `demoMode`
+    /// reads true for as long as this device stays active.
     func enterDemoMode() {
         let id = Self.demoDeviceId
         if !devices.contains(where: { $0.id == id }) {
@@ -60,7 +60,6 @@ final class ServerStore: ObservableObject {
         }
         Keychain.set("demo-token", for: "deviceToken:\(id)")
         persistDevices()
-        demoMode = true
         setActive(id)
     }
 
@@ -129,7 +128,6 @@ final class ServerStore: ObservableObject {
         for d in devices { Keychain.remove("deviceToken:\(d.id)") }
         devices.removeAll()
         persistDevices()
-        demoMode = false
         setActive(nil)
     }
 

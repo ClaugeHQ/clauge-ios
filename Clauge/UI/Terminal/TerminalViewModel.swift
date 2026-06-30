@@ -30,7 +30,7 @@ final class TerminalViewModel: ObservableObject {
 
     init(terminalId: String) {
         self.terminalId = terminalId
-        self.isDemo = Services.shared.store.demoMode || terminalId.hasPrefix("demo")
+        self.isDemo = Services.shared.store.demoMode
         bridge.onReady = { [weak self] cols, rows in self?.openSocket(cols: cols, rows: rows) }
         bridge.onData = { [weak self] b64 in
             guard let self else { return }
@@ -72,13 +72,21 @@ final class TerminalViewModel: ObservableObject {
     /// backspace erases, everything else is written verbatim.
     private func demoEcho(_ input: String) {
         guard let data = Data(base64Encoded: input) else { return }
+        let newline = Array("\r\n\(DemoTerminal.prompt)".utf8)
+        let bytes = Array(data)
         var out: [UInt8] = []
-        for byte in data {
+        var i = 0
+        while i < bytes.count {
+            let byte = bytes[i]
             switch byte {
-            case 0x0d, 0x0a: out.append(contentsOf: Array("\r\n\(DemoTerminal.prompt)".utf8))
+            case 0x0d, 0x0a:
+                // Coalesce a CRLF pair (or a lone CR/LF) into one newline + prompt.
+                out.append(contentsOf: newline)
+                if byte == 0x0d, i + 1 < bytes.count, bytes[i + 1] == 0x0a { i += 1 }
             case 0x7f, 0x08: out.append(contentsOf: [0x08, 0x20, 0x08])
             default: out.append(byte)
             }
+            i += 1
         }
         bridge.write(Data(out).base64EncodedString())
     }
