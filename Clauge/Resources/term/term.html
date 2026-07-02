@@ -286,6 +286,27 @@
       function boot() {
         var host = document.getElementById('term');
         term.open(host);
+        // Touch scrollback: the WebGL/Canvas renderer overlays a canvas that
+        // swallows touch, so .xterm-viewport never scrolls on drag. Map a
+        // one-finger vertical drag to term.scrollLines so scrollback works.
+        (function () {
+          var lastY = 0, accum = 0, active = false;
+          host.addEventListener('touchstart', function (e) {
+            if (e.touches.length !== 1) { active = false; return; }
+            active = true; lastY = e.touches[0].clientY; accum = 0;
+          }, { passive: true });
+          host.addEventListener('touchmove', function (e) {
+            if (!active || e.touches.length !== 1) return;
+            var y = e.touches[0].clientY;
+            accum += (lastY - y);
+            lastY = y;
+            var cell = host.clientHeight / (term.rows || 24);
+            if (cell < 1) cell = 18;
+            var lines = (accum / cell) | 0;
+            if (lines !== 0) { term.scrollLines(lines); accum -= lines * cell; }
+          }, { passive: true });
+          host.addEventListener('touchend', function () { active = false; }, { passive: true });
+        })();
         // Kill predictive text / autocorrect on xterm's hidden input. A terminal
         // sends keystrokes straight to the PTY, so when the IME "replaces" a word
         // (accepting a suggestion) it re-sends the whole thing and duplicates it.
